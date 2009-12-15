@@ -91,7 +91,7 @@ class PxeMultiBootHelper
 
   def download(path, uri)
     unless File.exist?(path)
-      unless xsystem("curl", uri, "--output", path)
+      unless xsystem("curl", uri, "--output", path, "--fail")
         fu.rm_f(path)
         raise "download failed: #{uri} to #{path}"
       end
