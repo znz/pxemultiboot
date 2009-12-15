@@ -46,8 +46,15 @@ class PxeMultiBootHelper
   def setup_default_mirror
     @mirror = {
       :syslinux => "http://www.kernel.org/pub/linux/utils/boot/syslinux",
+
       :debian => "http://ftp.jp.debian.org/debian",
       :ubuntu => "http://jp.archive.ubuntu.com/ubuntu",
+
+      # see http://mirrors.fedoraproject.org/publiclist/Fedora/
+      :fedora => "http://ftp.riken.jp/Linux/fedora/releases",
+      :centos => "http://ftp.riken.jp/Linux/centos",
+      :vine => "http://ftp.vinelinux.org/pub/Vine",
+      #:vine => "http://www.t.ring.gr.jp/pub/linux/Vine",
     }
   end
 
@@ -110,7 +117,7 @@ class PxeMultiBootHelper
     end
 
     def cfg_puts(cfg_text)
-      @menu_cfg_file.puts cfg_text
+      @menu_cfg_file.puts cfg_text if cfg_text
     end
 
     def menu_include(sub_cfg)
@@ -120,9 +127,9 @@ class PxeMultiBootHelper
     def run(parent, top)
       open(@menu_cfg, "w") do |f|
         @menu_cfg_file = f
-        cfg_puts cfg_prologue if respond_to?(:cfg_prologue)
+        cfg_puts cfg_prologue
         main(parent, top)
-        cfg_puts cfg_epilogue if respond_to?(:cfg_epilogue)
+        cfg_puts cfg_epilogue
       end
     ensure
       @menu_cfg_file = nil
@@ -133,6 +140,19 @@ class PxeMultiBootHelper
         sub_menu.run(self, top)
       end
       parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      <<-CFG
+label mainmenu
+	menu label ^Return to Top Menu
+	kernel boot-screens/vesamenu.c32
+	append pxelinux.cfg/default
+      CFG
+    end
+
+    def cfg_epilogue
+      nil
     end
   end
 
@@ -200,15 +220,6 @@ menu begin #{@title} Install
 
     def distro
       "debian"
-    end
-
-    def cfg_prologue
-      <<-CFG
-label mainmenu
-	menu label ^Return to Top Menu
-	kernel boot-screens/vesamenu.c32
-	append pxelinux.cfg/default
-      CFG
     end
 
     def mirror(top)
@@ -316,6 +327,77 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
       top.mirror(:ubuntu)
     end
   end
+
+  class Anaconda < Menu
+    def initialize(options)
+      @distro = options[:distro]
+      @title = options[:title]
+      @ver = options[:ver]
+      @arch = options[:arch]
+      @kernel = options.fetch(:kernel, "images/pxeboot/vmlinuz")
+      @initrd = options.fetch(:initrd, "images/pxeboot/initrd.img")
+      @isolinux_cfg = options.fetch(:isolinux_cfg, "isolinux/isolinux.cfg")
+      @template = options[:template]
+      @append_template = options.fetch(:append_template, nil)
+      d_v_a = "#{@distro}-#{@ver}-#{@arch}"
+      super("boot-screens/#{d_v_a}.cfg")
+    end
+
+    def mirror(top)
+      top.mirror(@distro.intern)
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      d_v_a_dir = "#{@distro}/#{@ver}/#{@arch}"
+      d_v_a = "#{@distro}-#{@ver}-#{@arch}"
+      fu.mkpath(d_v_a_dir)
+      download_dir = "#{top.download_dir}/#{d_v_a}"
+      fu.mkpath(download_dir)
+      [@kernel, @initrd, @isolinux_cfg].each do |file|
+        download_file = "#{download_dir}/#{File.basename(file)}"
+        url = sprintf(@template, mirror(top), @ver, @arch, file)
+        top.download(download_file, url)
+        fu.cp(download_file, "#{d_v_a_dir}/#{File.basename(file)}")
+      end
+      cfg = File.read("#{download_dir}/#{File.basename(@isolinux_cfg)}")
+      cfg.gsub!(/^(?:prompt|timeout)/) { '###'+$& }
+      more_files = []
+      menu_c32 = "boot-screens/vesamenu.c32"
+      cfg.gsub!(/^(default|display|F\d|menu background|\s*kernel|KBDMAP) (vesamenu\.c32|\w+\.msg|splash\.jpg|memtest|jp106\.kbd)$/i) {
+        more_files << $2
+        if $1 == "default"
+          menu_c32 = "#{d_v_a_dir}/#{$2}"
+        end
+        "#{$1} #{d_v_a_dir}/#{$2}"
+      }
+      if @append_template
+        append = sprintf(@append_template, mirror(top), @ver, @arch)
+        cfg.gsub!(/^\s*append.*initrd.*/) {
+          "#{$&} #{append}"
+        }
+      end
+      cfg.gsub!(/vmlinuz|initrd\.img/) {
+        "#{d_v_a_dir}/#{$&}"
+      }
+      cfg.gsub!(/^\s*label /) { "#{$&}#{d_v_a}-" }
+      more_files.each do |file|
+        file = File.join(File.dirname(@isolinux_cfg), file)
+        download_file = "#{download_dir}/#{File.basename(file)}"
+        url = sprintf(@template, mirror(top), @ver, @arch, file)
+        top.download(download_file, url)
+        fu.cp(download_file, "#{d_v_a_dir}/#{File.basename(file)}")
+      end
+      cfg_puts cfg
+
+      parent.cfg_puts <<-CFG
+label #{d_v_a}
+	menu label #{@title} #{@ver} #{@arch} Installer
+	kernel #{menu_c32}
+	append boot-screens/#{d_v_a}.cfg
+      CFG
+    end
+  end # Anaconda
 
   def setup_pxelinux(ver)
     tar_gz = "#{download_dir}/syslinux-#{ver}.tar.bz2"
@@ -446,6 +528,67 @@ LABEL floppy disk
             ].each do |d_i|
               ubuntu.push_sub_menu(d_i)
             end
+          end
+        end
+      end
+
+      opts.on("--fedora 12,11,10,9", Array, "Fedora Install") do |list|
+        fedora = Installer.new("fedora", "Fedora")
+        top_menu.push_sub_menu(fedora)
+        list.each do |ver|
+          %w"i386 x86_64".each do |arch|
+            options = {
+              :distro => "fedora",
+              :title => "Fedora",
+              :ver => ver,
+              :arch => arch,
+              :template => "%s/%s/Fedora/%s/os/%s",
+              # see http://fedoraproject.org/wiki/Anaconda/Options
+              # http://docs.fedoraproject.org/install-guide/f11/en-US/html/ap-admin-options.html#sn-boot-options-installmethod
+              #:append_template => "repo=%s/%s/Fedora/%s/os",
+              :append_template => "method=%s/%s/Fedora/%s/os",
+            }
+            fedora.push_sub_menu(Anaconda.new(options))
+          end
+        end
+      end
+
+      opts.on("--centos 5.4,5.3,4.8,4.7", Array, "CentOS Install") do |list|
+        centos = Installer.new("centos", "CentOS")
+        top_menu.push_sub_menu(centos)
+        list.each do |ver|
+          %w"i386 x86_64".each do |arch|
+            options = {
+              :distro => "centos",
+              :title => "CentOS",
+              :ver => ver,
+              :arch => arch,
+              :template => "%s/%s/os/%s/%s",
+              :append_template => "method=%s/%s/os/%s",
+            }
+            centos.push_sub_menu(Anaconda.new(options))
+          end
+        end
+      end
+
+      opts.on("--vine 5.0,4.2", Array, "Vine Linux Install") do |list|
+        vine = Installer.new("vine", "Vine Linux")
+        top_menu.push_sub_menu(vine)
+        list.each do |ver|
+          if 5 <= ver.to_i
+            archs = %w"i386 x86_64"
+          else
+            archs = %w"i386"
+          end
+          archs.each do |arch|
+            options = {
+              :distro => "vine",
+              :title => "Vine Linux",
+              :ver => ver,
+              :arch => arch,
+              :template => "%s/Vine-%s/%s/%s",
+            }
+            vine.push_sub_menu(Anaconda.new(options))
           end
         end
       end
