@@ -176,9 +176,16 @@ menu begin #{@title} Install
   class DebianInstaller < Menu
     def initialize(suite, title, options={})
       @distro = "debian"
-      @suite = suite
       @title = title
       @arch = options[:arch] || "i386"
+
+      if options[:installer_suite]
+        @target_suite = suite
+        @installer_suite = options[:installer_suite]
+      else
+        @target_suite = suite
+        @installer_suite = suite
+      end
 
       if options[:gtk]
         @m_gtk = "-gtk" # minus and gtk
@@ -188,7 +195,7 @@ menu begin #{@title} Install
         @m_gtk = @slash_gtk = @s_GTK = ""
       end
 
-      super("boot-screens/#{@suite}-#{@arch}#{@m_gtk}.cfg")
+      super("boot-screens/#{@target_suite}-#{@arch}#{@m_gtk}.cfg")
     end
 
     def cfg_prologue
@@ -209,15 +216,15 @@ label mainmenu
     end
 
     def installer_dir
-      "#{@distro}/#{@suite}#{@m_gtk}-installer"
+      "#{@distro}/#{@installer_suite}#{@m_gtk}-installer"
     end
 
     def netboot_uri(top)
-      "#{mirror(top)}/dists/#{@suite}/main/installer-#{@arch}/current/images/netboot#{@slash_gtk}/netboot.tar.gz"
+      "#{mirror(top)}/dists/#{@installer_suite}/main/installer-#{@arch}/current/images/netboot#{@slash_gtk}/netboot.tar.gz"
     end
 
     def netboot_tar_gz(top)
-      "#{top.download_dir}/#{@suite}-#{@arch}#{@m_gtk}-netboot.tar.gz"
+      "#{top.download_dir}/#{@installer_suite}-#{@arch}#{@m_gtk}-netboot.tar.gz"
     end
 
     def main(parent, top)
@@ -261,7 +268,7 @@ label mainmenu
         File.foreach("#{installer_dir}/#{@arch}/pxelinux.cfg/default") do |line|
           case line
           when /^LABEL /
-            cfg_puts "label #{@suite}-#{@arch}-#{$'}"
+            cfg_puts "label #{@target_suite}-#{@arch}-#{$'}"
           when /^\s+(?:kernel|append)/
             cfg_puts line.gsub(extract_dir) { installer_dir }
           else
@@ -270,18 +277,31 @@ label mainmenu
         end
       end
 
-      kernel = "#{@suite}#{@m_gtk}-installer/#{@arch}/boot-screens/vesamenu.c32"
+      kernel = "#{@installer_suite}#{@m_gtk}-installer/#{@arch}/boot-screens/vesamenu.c32"
       unless File.exist?(kernel)
         kernel = "boot-screens/vesamenu.c32"
       end
       parent.cfg_puts <<-CFG
-label #{@suite}-#{@arch}#{@m_gtk}
+label #{@target_suite}-#{@arch}#{@m_gtk}
 	menu label #{@title} #{@arch}#{@s_GTK} Installer
 	kernel #{kernel}
-	append boot-screens/#{@suite}-#{@arch}#{@m_gtk}.cfg
+	append boot-screens/#{@target_suite}-#{@arch}#{@m_gtk}.cfg
       CFG
     end
   end # DebianInstaller
+
+
+  class DebianAndAHalfInstaller < DebianInstaller
+    def initialize(suite, title, options={})
+      options[:installer_suite] = "lenny"
+      super
+    end
+
+    def cfg_puts(cfg_text)
+      cfg_text.gsub!(/^\s*append.+(?= --)/) { $& + " suite=etch" }
+      @menu_cfg_file.puts cfg_text
+    end
+  end
 
   def setup_pxelinux(ver)
     tar_gz = "#{download_dir}/syslinux-#{ver}.tar.bz2"
@@ -352,16 +372,24 @@ LABEL floppy disk
         "squeeze" => "squeeze (testing)",
         "lenny" => "lenny (stable)",
         "etch" => "etch (oldstable)",
-        #"etchnhalf" => "etchnhalf",
+        "etchnhalf" => "etch-and-a-half",
       }
       opts.on("--debian #{debian_suites.keys.join(',')}", Array, "Debian GNU/Linux Installer") do |list|
         debian = Installer.new("debian", "Debian GNU/Linux")
         top_menu.push_sub_menu(debian)
         list.each do |suite|
+          title = debian_suites[suite]
           case suite
           when "etchnhalf"
+            [
+              DebianAndAHalfInstaller.new(suite, title),
+              DebianAndAHalfInstaller.new(suite, title, :arch => "amd64"),
+              DebianAndAHalfInstaller.new(suite, title, :gtk => true),
+              DebianAndAHalfInstaller.new(suite, title, :arch => "amd64", :gtk => true),
+            ].each do |d_i|
+              debian.push_sub_menu(d_i)
+            end
           else
-            title = debian_suites[suite]
             [
               DebianInstaller.new(suite, title),
               DebianInstaller.new(suite, title, :arch => "amd64"),
