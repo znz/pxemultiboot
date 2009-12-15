@@ -45,8 +45,9 @@ class PxeMultiBootHelper
 
   def setup_default_mirror
     @mirror = {
-      :debian => "http://ftp.jp.debian.org/debian",
       :syslinux => "http://www.kernel.org/pub/linux/utils/boot/syslinux",
+      :debian => "http://ftp.jp.debian.org/debian",
+      :ubuntu => "http://jp.archive.ubuntu.com/ubuntu",
     }
   end
 
@@ -175,7 +176,6 @@ menu begin #{@title} Install
 
   class DebianInstaller < Menu
     def initialize(suite, title, options={})
-      @distro = "debian"
       @title = title
       @arch = options[:arch] || "i386"
 
@@ -198,6 +198,10 @@ menu begin #{@title} Install
       super("boot-screens/#{@target_suite}-#{@arch}#{@m_gtk}.cfg")
     end
 
+    def distro
+      "debian"
+    end
+
     def cfg_prologue
       <<-CFG
 label mainmenu
@@ -212,11 +216,11 @@ label mainmenu
     end
 
     def extract_dir
-      "#{@distro}-installer"
+      "#{distro}-installer"
     end
 
     def installer_dir
-      "#{@distro}/#{@installer_suite}#{@m_gtk}-installer"
+      "#{distro}/#{@installer_suite}#{@m_gtk}-installer"
     end
 
     def netboot_uri(top)
@@ -301,6 +305,16 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
       cfg_text.gsub!(/^\s*append.+(?= --)/) { $& + " suite=etch" }
       @menu_cfg_file.puts cfg_text
     end
+  end # DebianAndAHalfInstaller
+
+  class Ubuntu < DebianInstaller
+    def distro
+      "ubuntu"
+    end
+
+    def mirror(top)
+      top.mirror(:ubuntu)
+    end
   end
 
   def setup_pxelinux(ver)
@@ -374,7 +388,7 @@ LABEL floppy disk
         "etch" => "etch (oldstable)",
         "etchnhalf" => "etch-and-a-half",
       }
-      opts.on("--debian #{debian_suites.keys.join(',')}", Array, "Debian GNU/Linux Installer") do |list|
+      opts.on("--debian #{debian_suites.keys.join(',')}", Array, "Debian GNU/Linux Install") do |list|
         debian = Installer.new("debian", "Debian GNU/Linux")
         top_menu.push_sub_menu(debian)
         list.each do |suite|
@@ -397,6 +411,40 @@ LABEL floppy disk
               DebianInstaller.new(suite, title, :arch => "amd64", :gtk => true),
             ].each do |d_i|
               debian.push_sub_menu(d_i)
+            end
+          end
+        end
+      end
+
+      ubuntu_suites = {
+        "lucid" => "10.04 LTS Lucid Lynx",
+        "karmic" => "9.10 Karmic Koara",
+        "jaunty" => "9.04 Jaunty Jackalope",
+        "intrepid" => "8.10 Intrepid Ibex",
+        "hardy" => "8.04 LTS Hardy Heron",
+        "dapper" => "6.06 LTS Dapper Drake",
+      }
+      opts.on("--ubuntu #{ubuntu_suites.keys.join(',')}", Array, "Ubuntu Linux Install") do |list|
+        ubuntu = Installer.new("ubuntu", "Ubuntu Linux")
+        top_menu.push_sub_menu(ubuntu)
+        list.each do |suite|
+          title = ubuntu_suites[suite]
+          case suite
+          when /\A[j]/
+            [
+              Ubuntu.new(suite, title),
+              Ubuntu.new(suite, title, :arch => "amd64"),
+              Ubuntu.new(suite, title, :gtk => true),
+              Ubuntu.new(suite, title, :arch => "amd64", :gtk => true),
+            ].each do |d_i|
+              ubuntu.push_sub_menu(d_i)
+            end
+          else
+            [
+              Ubuntu.new(suite, title),
+              Ubuntu.new(suite, title, :arch => "amd64"),
+            ].each do |d_i|
+              ubuntu.push_sub_menu(d_i)
             end
           end
         end
