@@ -55,6 +55,14 @@ class PxeMultiBootHelper
       :centos => "http://ftp.riken.jp/Linux/centos",
       :vine => "http://ftp.vinelinux.org/pub/Vine",
       #:vine => "http://www.t.ring.gr.jp/pub/linux/Vine",
+
+      :ping_release => "http://ping.windowsdream.com/ping/Releases",
+      :plop_files => "http://download.plop.at/files/bootmngr",
+      :balder10_img => "http://www.finnix.org/files/balder10.img",
+      :mbm_zip => "http://my.vector.co.jp/servlet/System.FileDownload/download/http/0/35596/pack/dos/util/boot/mbm039.zip",
+      # :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
+      # :gag_zip => "http://jaist.dl.sourceforge.net/project/gag/gag/gag%204.10/gag4_10.zip",
+      :gag_zip => "http://jaist.dl.sourceforge.net/project/gag/gag/gag%%20%s/gag%s.zip",
     }
   end
 
@@ -356,8 +364,8 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
       fu.mkpath(download_dir)
       [@kernel, @initrd, @isolinux_cfg].each do |file|
         download_file = "#{download_dir}/#{File.basename(file)}"
-        url = sprintf(@template, mirror(top), @ver, @arch, file)
-        top.download(download_file, url)
+        uri = sprintf(@template, mirror(top), @ver, @arch, file)
+        top.download(download_file, uri)
         fu.cp(download_file, "#{d_v_a_dir}/#{File.basename(file)}")
       end
       cfg = File.read("#{download_dir}/#{File.basename(@isolinux_cfg)}")
@@ -384,8 +392,8 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
       more_files.each do |file|
         file = File.join(File.dirname(@isolinux_cfg), file)
         download_file = "#{download_dir}/#{File.basename(file)}"
-        url = sprintf(@template, mirror(top), @ver, @arch, file)
-        top.download(download_file, url)
+        uri = sprintf(@template, mirror(top), @ver, @arch, file)
+        top.download(download_file, uri)
         fu.cp(download_file, "#{d_v_a_dir}/#{File.basename(file)}")
       end
       cfg_puts cfg
@@ -398,6 +406,166 @@ label #{d_v_a}
       CFG
     end
   end # Anaconda
+
+  class SimpleMenu < Menu
+    def initialize(name, ver)
+      @name = name
+      @ver = ver
+      @dir = "#{@name}-#{@ver}"
+      super("boot-screens/#{@name}-#{@ver}.cfg")
+    end
+
+    def run(parent, top)
+      super
+      parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      nil
+    end
+  end
+
+  # PING (Partimage Is Not Ghost) -- Backup and Restore Disk Partitions
+  # http://ping.windowsdream.com/ping.html
+  class Ping < Menu
+    def initialize(ver)
+      @name = "ping"
+      @ver = ver
+      @dir = "#{@name}-#{@ver}"
+      super("boot-screens/#{@dir}.cfg")
+    end
+
+    def uri(file, top)
+      "#{top.mirror(:ping_release)}/#{@ver}/#{file}"
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      download_dir = "#{top.download_dir}/#{@dir}"
+      fu.mkpath(download_dir)
+      fu.mkpath(@dir)
+      isolinux_cfg = "#{download_dir}/isolinux.cfg"
+      top.download(isolinux_cfg, uri("isolinux.cfg", top))
+      cfg = File.read(isolinux_cfg)
+      more_files = ["initrd.gz"]
+      cfg.gsub!(/^(DISPLAY|KERNEL) (\w+\.msg|kernel)$/) {
+        more_files << $2
+        "#{$1} #{@dir}/#{$2}"
+      }
+      cfg.gsub!(/initrd\.gz/) {
+        "#{@dir}/#{$&}"
+      }
+      more_files.each do |file|
+        download_file = "#{download_dir}/#{file}"
+        top.download(download_file, uri(file, top))
+        fu.cp(download_file, "#{@dir}/#{File.basename(file)}")
+      end
+      cfg_puts cfg
+      parent.cfg_puts <<-CFG
+label ping-#{@ver}
+	menu label PING(Partimage Is Not Ghost) #{@ver}
+	kernel boot-screens/vesamenu.c32
+	append boot-screens/ping-#{@ver}.cfg
+      CFG
+    end
+
+    def cfg_prologue
+      "menu title PING(Partimage Is Not Ghost) #{@ver}"
+    end
+
+    def cfg_epilogue
+      <<-CFG
+label mainmenu
+	menu label ^Return to Top Menu
+	kernel boot-screens/vesamenu.c32
+	append pxelinux.cfg/default
+      CFG
+    end
+  end
+
+  # http://www.plop.at/en/bootmanager.html
+  class PlopBootManager < SimpleMenu
+    def initialize(ver)
+      super("plop", ver)
+    end
+
+    def uri(top)
+      "#{top.mirror(:plop_files)}/plpbt-#{@ver}.zip"
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      download_file = "#{top.download_dir}/plop/#{File.basename(uri(top))}"
+      fu.mkpath(File.dirname(download_file))
+      top.download(download_file, uri(top))
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("7z", "x", download_file)
+      end
+      fu.mkpath("plop-#{@ver}")
+      fu.mv("tmp/plpbt-#{@ver}/plpbt.bin", "plop-#{@ver}/plpbt")
+      fu.rm_rf("tmp/plpbt-#{@ver}")
+      fu.rmdir("tmp")
+      cfg_puts <<-CFG
+label plpbt
+	menu label PLoP Boot Manager
+	kernel #{@dir}/plpbt
+      CFG
+    end
+  end
+
+
+  class FreedosBalder10 < SimpleMenu
+    def initialize
+      super("freedos", "balder10")
+    end
+
+    def uri(top)
+      top.mirror(:balder10_img)
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      download_file = "#{top.download_dir}/freedos/#{File.basename(uri(top))}"
+      fu.mkpath(File.dirname(download_file))
+      top.download(download_file, uri(top))
+      fu.mkpath("freedos")
+      fu.cp(download_file, "freedos/#{File.basename(download_file)}")
+      cfg_puts <<-CFG
+label balder
+	menu label Balder 10 (FreeDOS 1.0)
+	kernel boot-screens/memdisk
+	append initrd=freedos/balder10.img
+      CFG
+    end
+  end
+
+  class Gag < SimpleMenu
+    def initialize(ver)
+      super("gag", ver)
+    end
+
+    def uri(top)
+      sprintf(top.mirror(:gag_zip), @ver, @ver.tr(".", "_"))
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      download_file = "#{top.download_dir}/gag/#{File.basename(uri(top))}"
+      fu.mkpath(File.dirname(download_file))
+      top.download(download_file, uri(top))
+      disk_dsk = "gag#{@ver}/disk.dsk"
+      unless File.exist?(disk_dsk)
+        top.xsystem("unzip", download_file, disk_dsk)
+      end
+      cfg_puts <<-CFG
+label gag#{@ver}
+	menu label GAG (Graphical Boot Manager)
+	kernel boot-screens/memdisk
+	append initrd=#{disk_dsk}
+      CFG
+    end
+  end
 
   def setup_pxelinux(ver)
     tar_gz = "#{download_dir}/syslinux-#{ver}.tar.bz2"
@@ -593,7 +761,23 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--syslinux=VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
+      opts.on("--ping 3.00.03", "PING(Partimage Is Not Ghost)") do |v|
+        top_menu.push_sub_menu(Ping.new(v))
+      end
+
+      opts.on("--plop-boot-manager 5.0.4", "PLoP Boot Manager") do |v|
+        top_menu.push_sub_menu(PlopBootManager.new(v))
+      end
+
+      opts.on("--freedos-balder10", "Balder 10 (FreeDOS 1.0)") do |v|
+        top_menu.push_sub_menu(FreedosBalder10.new)
+      end
+
+      opts.on("--gag 4.10", "GAG (Graphical Boot Manager)") do |v|
+        top_menu.push_sub_menu(Gag.new(v))
+      end
+
+      opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
         syslinux_ver = v
       end
     end.parse!(argv)
