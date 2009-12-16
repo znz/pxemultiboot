@@ -537,16 +537,9 @@ label #{@dir}
     end
   end
 
-
-  class FreedosBalder10 < SimpleMenu
-    TITLE = "Balder 10 (FreeDOS 1.0)"
-
-    def initialize
-      super("freedos", "balder10")
-    end
-
-    def uri(top)
-      top.mirror(:balder10_img)
+  class FloppyImage < SimpleMenu
+    def title
+      self.class::TITLE
     end
 
     def main_after_download(download_file, parent, top)
@@ -557,10 +550,22 @@ label #{@dir}
 
       cfg_puts <<-CFG
 label #{@dir}
-	menu label #{TITLE}
+	menu label #{title}
 	kernel boot-screens/memdisk
 	append initrd=#{img}
       CFG
+    end
+  end
+
+  class FreedosBalder10 < FloppyImage
+    TITLE = "Balder 10 (FreeDOS 1.0)"
+
+    def initialize
+      super("freedos", "balder10")
+    end
+
+    def uri(top)
+      top.mirror(:balder10_img)
     end
   end
 
