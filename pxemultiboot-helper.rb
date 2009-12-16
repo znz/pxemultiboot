@@ -180,17 +180,17 @@ menu background boot-screens/syslinux_splash.jpg
     end
   end
 
-  class Installer < Menu
-    def initialize(distro, title)
-      @distro = distro
+  class SubMenu < Menu
+    def initialize(name, title)
+      @name = name
       @title = title
-      super("boot-screens/#{@distro}.cfg")
+      super("boot-screens/#{@name}.cfg")
     end
 
     def cfg_prologue
       <<-CFG
-menu begin #{@title} Install
-	menu title #{@title} Install
+menu begin #{@title}
+	menu title #{@title}
 	label mainmenu
 		menu label ^Back..
 		menu exit
@@ -690,8 +690,9 @@ LABEL floppy disk
         "etch" => "etch (oldstable)",
         "etchnhalf" => "etch-and-a-half",
       }
-      opts.on("--debian #{debian_suites.keys.join(',')}", Array, "Debian GNU/Linux Install") do |list|
-        debian = Installer.new("debian", "Debian GNU/Linux")
+      debian_title = "Debian GNU/Linux Install"
+      opts.on("--debian #{debian_suites.keys.join(',')}", Array, debian_title) do |list|
+        debian = SubMenu.new("debian", debian_title)
         top_menu.push_sub_menu(debian)
         list.each do |suite|
           title = debian_suites[suite]
@@ -738,8 +739,9 @@ LABEL floppy disk
         "hardy" => "8.04 LTS Hardy Heron",
         "dapper" => "6.06 LTS Dapper Drake",
       }
-      opts.on("--ubuntu #{ubuntu_suites.keys.join(',')}", Array, "Ubuntu Linux Install") do |list|
-        ubuntu = Installer.new("ubuntu", "Ubuntu Linux")
+      ubuntu_title = "Ubuntu Linux Install"
+      opts.on("--ubuntu #{ubuntu_suites.keys.join(',')}", Array, ubuntu_title) do |list|
+        ubuntu = SubMenu.new("ubuntu", ubuntu_title)
         top_menu.push_sub_menu(ubuntu)
         list.each do |suite|
           title = ubuntu_suites[suite]
@@ -764,8 +766,9 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--fedora 12,11,10,9", Array, "Fedora Install") do |list|
-        fedora = Installer.new("fedora", "Fedora")
+      fedora_title = "Fedora Install"
+      opts.on("--fedora 12,11,10,9", Array, fedora_title) do |list|
+        fedora = SubMenu.new("fedora", fedora_title)
         top_menu.push_sub_menu(fedora)
         list.each do |ver|
           %w"i386 x86_64".each do |arch|
@@ -785,8 +788,9 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--centos 5.4,5.3,4.8,4.7", Array, "CentOS Install") do |list|
-        centos = Installer.new("centos", "CentOS")
+      centos_title = "CentOS Install"
+      opts.on("--centos 5.4,5.3,4.8,4.7", Array, centos_title) do |list|
+        centos = SubMenu.new("centos", centos_title)
         top_menu.push_sub_menu(centos)
         list.each do |ver|
           %w"i386 x86_64".each do |arch|
@@ -803,8 +807,9 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--vine 5.0,4.2", Array, "Vine Linux Install") do |list|
-        vine = Installer.new("vine", "Vine Linux")
+      vine_title = "Vine Linux Install"
+      opts.on("--vine 5.0,4.2", Array, vine_title) do |list|
+        vine = SubMenu.new("vine", vine_title)
         top_menu.push_sub_menu(vine)
         list.each do |ver|
           if 5 <= ver.to_i
