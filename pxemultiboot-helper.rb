@@ -4,7 +4,7 @@
 = PXE Multi Boot Helper
 == Requirements
 * Ruby 1.8.x
-* curl
+* wget
 
 == Usage
 * ruby pxemultiboot-helper.rb
@@ -60,9 +60,7 @@ class PxeMultiBootHelper
       :plop_files => "http://download.plop.at/files/bootmngr",
       :balder10_img => "http://www.finnix.org/files/balder10.img",
       :mbm_zip => "http://my.vector.co.jp/servlet/System.FileDownload/download/http/0/35596/pack/dos/util/boot/mbm039.zip",
-      # :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
-      # :gag_zip => "http://jaist.dl.sourceforge.net/project/gag/gag/gag%204.10/gag4_10.zip",
-      :gag_zip => "http://jaist.dl.sourceforge.net/project/gag/gag/gag%%20%s/gag%s.zip",
+      :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
     }
   end
 
@@ -107,7 +105,7 @@ class PxeMultiBootHelper
 
   def download(path, uri)
     unless File.exist?(path)
-      unless xsystem("curl", uri, "--output", path, "--fail")
+      unless xsystem("wget", uri, "-O", path)
         fu.rm_f(path)
         raise "download failed: #{uri} to #{path}"
       end
@@ -546,7 +544,7 @@ label balder
     end
 
     def uri(top)
-      sprintf(top.mirror(:gag_zip), @ver, @ver.tr(".", "_"))
+      sprintf(top.mirror(:gag_zip), @ver.tr(".", "_"))
     end
 
     def main(parent, top)
@@ -563,6 +561,34 @@ label gag#{@ver}
 	menu label GAG (Graphical Boot Manager)
 	kernel boot-screens/memdisk
 	append initrd=#{disk_dsk}
+      CFG
+    end
+  end
+
+
+  # http://elm-chan.org/fsw/mbm/mbm.html
+  class Mbm < SimpleMenu
+    def initialize
+      super("mbm", "0.39")
+    end
+
+    def uri(top)
+      top.mirror(:mbm_zip)
+    end
+
+    def main(parent, top)
+      fu = top.fu
+      download_file = "#{top.download_dir}/mbm/#{File.basename(uri(top))}"
+      fu.mkpath(File.dirname(download_file))
+      top.download(download_file, uri(top))
+      fu.mkpath("mbm")
+      top.xsystem("unzip", download_file, "BIN/MBM.144")
+      fu.mv("BIN", "mbm/BIN")
+      cfg_puts <<-CFG
+label mbm
+	menu label MBM (Multiple Boot Manager)
+	kernel boot-screens/memdisk
+	append initrd=mbm/BIN/MBM.144
       CFG
     end
   end
@@ -775,6 +801,10 @@ LABEL floppy disk
 
       opts.on("--gag 4.10", "GAG (Graphical Boot Manager)") do |v|
         top_menu.push_sub_menu(Gag.new(v))
+      end
+
+      opts.on("--mbm", "MBM (Multiple Boot Manager)") do |v|
+        top_menu.push_sub_menu(Mbm.new)
       end
 
       opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
