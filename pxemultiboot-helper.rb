@@ -261,7 +261,7 @@ menu begin #{@title} Install
       fu.mkpath(installer_dir)
       fu.rm_rf("#{installer_dir}/#{@arch}")
       fu.mv("tmp/#{extract_dir}/#{@arch}", "#{installer_dir}/")
-      fu.rmdir(extract_dir)
+      fu.rmdir("tmp/#{extract_dir}")
       fu.rmdir("tmp")
 
       menu_cfg = "#{installer_dir}/#{@arch}/boot-screens/menu.cfg"
@@ -321,6 +321,7 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
     end
 
     def cfg_puts(cfg_text)
+      return unless cfg_text
       cfg_text.gsub!(/^\s*append.+(?= --)/) { $& + " suite=etch" }
       @menu_cfg_file.puts cfg_text
     end
