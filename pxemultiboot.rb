@@ -70,11 +70,14 @@ class PxeMultiBootHelper
       :balder10_img => "http://www.finnix.org/files/balder10.img",
       :mbm_zip => "http://my.vector.co.jp/servlet/System.FileDownload/download/http/0/35596/pack/dos/util/boot/mbm039.zip",
       :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
+
+      # http://openlab.ring.gr.jp/oscircular/inetboot/index.html
+      :inetboot => "http://ring.aist.go.jp/archives/linux/oscircular/iso",
     }
   end
 
   def mirror(target)
-    @mirror[target]
+    @mirror[target] or raise "unknown target: #{target}"
   end
 
   def set_verbose(flag=true)
@@ -594,7 +597,6 @@ label #{@dir}
     end
   end
 
-
   # http://elm-chan.org/fsw/mbm/mbm.html
   class MBM < SimpleMenu
     TITLE = "MBM (Multiple Boot Manager)"
@@ -625,6 +627,59 @@ label mbm
       CFG
     end
   end
+
+  # http://openlab.ring.gr.jp/oscircular/inetboot/index.html
+  class InetBoot < Menu
+    def initialize(ver, label, title, append)
+      @ver = ver
+      @dir = "inetboot-#{@ver}"
+      @label = label
+      @title = title
+      @append = append
+      super("boot-screens/inetboot-#{@label}.cfg")
+    end
+
+    def main(parent, top)
+      ensure_inetboot(top)
+
+      unless /netdir=(\S+)/ =~ @append
+        raise "netdir option not found in append: #{@append}"
+      end
+      uri = $1
+      unless top.xsystem("wget", "--spider", uri)
+        raise "not found: #{uri}"
+      end
+
+      cfg_puts <<-CFG
+label #{@label}
+	menu label #{@title}
+	kernel /#{@dir}/linux
+	append initrd=/#{@dir}/minirt.gz #{@append}
+      CFG
+
+      parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      nil
+    end
+
+    def ensure_inetboot(top)
+      return if File.directory?(@dir)
+      fu = top.fu
+      download_dir = "#{top.download_dir}/#{@dir}"
+      fu.mkpath(download_dir)
+      files = %w"linux minirt.gz"
+      files.each do |file|
+        uri = "#{top.mirror(:inetboot)}/#{@dir}/#{file}"
+        top.download("#{download_dir}/#{file}", uri)
+      end
+      fu.mkpath(@dir)
+      files.each do |file|
+        fu.cp("#{download_dir}/#{file}", "#{@dir}/#{file}")
+      end
+    end
+  end # InetBoot
 
   def setup_pxelinux(ver)
     tar_gz = "#{download_dir}/syslinux-#{ver}.tar.bz2"
@@ -855,6 +910,65 @@ LABEL floppy disk
 
       opts.on("--ping 3.00.03", PING::TITLE) do |v|
         top_menu.push_sub_menu(PING.new(v))
+      end
+
+      inetboot_sub_menu = nil
+      inetboot_ver = "20080925"
+      opts.on("--inetboot label,title,append", Array, "InetBoot") do |label, title, append|
+        unless inetboot_sub_menu
+          inetboot_sub_menu = SubMenu.new("inetboot", "InetBoot #{inetboot_ver}")
+          top_menu.push_sub_menu(inetboot_sub_menu)
+        end
+        inetboot = InetBoot.new(inetboot_ver, label, title, append)
+        inetboot_sub_menu.push_sub_menu(inetboot)
+      end
+
+      opts.on("--inetboot-examples", "Show InetBoot option examples and exit") do
+        inetboot_base_uri = "http://192.168.x.y/iso"
+        inetboot_example_show = proc {|o|
+          puts "--inetboot=#{o[:label]},#{o[:title]},#{o[:append]}"
+        }
+        inetboot_example_show.call({
+            :label => "knoppix601",
+            :title => "KNOPPIX 6.0.1",
+            :append => "netdir=#{inetboot_base_uri}/knoppix_v6.0.1CD_20090208-20090225_opt.iso type=knoppix ramdisk_size=100000 lang=ja screen=1024x768",
+          })
+        inetboot_example_show.call({
+            :label => "knoppix531",
+            :title => "KNOPPIX 5.3.1 lang=ja",
+            :append => "netdir=#{inetboot_base_uri}/knoppix_v5.3.1CD_20080326-20080520.iso type=knoppix ramdisk_size=100000 lang=ja screen=1024x768",
+          })
+        inetboot_example_show.call({
+      :label => "knoppix531_vesa",
+      :title => "KNOPPIX 5.3.1 lang=ja vesa",
+      :append => "netdir=#{inetboot_base_uri}/knoppix_v5.3.1CD_20080326-20080520.iso type=knoppix ramdisk_size=100000 lang=ja xmodule=vesa screen=1024x768",
+          })
+        inetboot_example_show.call({
+            :label => "knoppix-511",
+            :title => "KNOPPIX 5.1.1 lang=ja lang=ja.utf8",
+            :append => "netdir=#{inetboot_base_uri}/knoppix_v5.1.1CD_20070104-20070122+IPAFont_AC20070123.iso type=knoppix ramdisk_size=100000 lang=ja.utf8 vga=normal screen=1024x768",
+          })
+        inetboot_example_show.call({
+            :label => "knoppix-511-vesa",
+            :title => "KNOPPIX 5.1.1 lang=ja lang=ja.utf8 vesa",
+            :append => "netdir=#{inetboot_base_uri}/knoppix_v5.1.1CD_20070104-20070122+IPAFont_AC20070123.iso type=knoppix ramdisk_size=100000 lang=ja.utf8 vga=normal xmodule=vesa screen=1024x768",
+          })
+        inetboot_example_show.call({
+            :label => "fedora9",
+            :title => "Fedora 9 Desktop Live",
+            :append => "netdir=#{inetboot_base_uri}/Fedora-9-i686-Live.iso type=fedora",
+          })
+        inetboot_example_show.call({
+            :label => "ubuntu804",
+            :title => "Ubuntu (ja) 8.04.2 (casper)",
+            :append => "netdir=#{inetboot_base_uri}/ubuntu-ja-8.04.2-desktop-i386.iso type=casper",
+          })
+        inetboot_example_show.call({
+            :label => "ecolinux804",
+            :title => "Ecolinux 8.04.8 (casper)",
+            :append => "netdir=#{inetboot_base_uri}/ecolinux-8.04.8.iso type=casper",
+          })
+        exit
       end
 
       opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
