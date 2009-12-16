@@ -405,27 +405,11 @@ label #{d_v_a}
     end
   end # Anaconda
 
-  class SimpleMenu < Menu
-    def initialize(name, ver)
-      @name = name
-      @ver = ver
-      @dir = "#{@name}-#{@ver}"
-      super("boot-screens/#{@name}-#{@ver}.cfg")
-    end
-
-    def run(parent, top)
-      super
-      parent.menu_include @menu_cfg
-    end
-
-    def cfg_prologue
-      nil
-    end
-  end
-
   # PING (Partimage Is Not Ghost) -- Backup and Restore Disk Partitions
   # http://ping.windowsdream.com/ping.html
-  class Ping < Menu
+  class PING < Menu
+    TITLE = "PING(Partimage Is Not Ghost)"
+
     def initialize(ver)
       @name = "ping"
       @ver = ver
@@ -460,15 +444,15 @@ label #{d_v_a}
       end
       cfg_puts cfg
       parent.cfg_puts <<-CFG
-label ping-#{@ver}
-	menu label PING(Partimage Is Not Ghost) #{@ver}
+label #{@dir}
+	menu label #{TITLE} #{@ver}
 	kernel boot-screens/vesamenu.c32
-	append boot-screens/ping-#{@ver}.cfg
+	append boot-screens/#{@dir}.cfg
       CFG
     end
 
     def cfg_prologue
-      "menu title PING(Partimage Is Not Ghost) #{@ver}"
+      "menu title #{TITLE} #{@ver}"
     end
 
     def cfg_epilogue
@@ -481,8 +465,38 @@ label mainmenu
     end
   end
 
+
+  class SimpleMenu < Menu
+    def initialize(name, ver)
+      @name = name
+      @ver = ver
+      @dir = "#{@name}-#{@ver}"
+      super("boot-screens/#{@dir}.cfg")
+    end
+
+    def main(parent, top)
+
+      fu = top.fu
+      download_uri = uri(top)
+      download_file = "#{top.download_dir}/#{@name}/#{File.basename(download_uri)}"
+      fu.mkpath(File.dirname(download_file))
+      top.download(download_file, download_uri)
+      fu.mkpath(@dir)
+
+      main_after_download(download_file, parent, top)
+
+      parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      nil
+    end
+  end
+
   # http://www.plop.at/en/bootmanager.html
-  class PlopBootManager < SimpleMenu
+  class PLoPBootManager < SimpleMenu
+    TITLE = "PLoP Boot Manager"
+
     def initialize(ver)
       super("plop", ver)
     end
@@ -491,22 +505,20 @@ label mainmenu
       "#{top.mirror(:plop_files)}/plpbt-#{@ver}.zip"
     end
 
-    def main(parent, top)
+    def main_after_download(download_file, parent, top)
       fu = top.fu
-      download_file = "#{top.download_dir}/plop/#{File.basename(uri(top))}"
-      fu.mkpath(File.dirname(download_file))
-      top.download(download_file, uri(top))
+
       fu.mkpath("tmp")
       fu.chdir("tmp") do
         top.xsystem("7z", "x", download_file)
       end
-      fu.mkpath("plop-#{@ver}")
-      fu.mv("tmp/plpbt-#{@ver}/plpbt.bin", "plop-#{@ver}/plpbt")
+      fu.mv("tmp/plpbt-#{@ver}/plpbt.bin", "#{@dir}/plpbt")
       fu.rm_rf("tmp/plpbt-#{@ver}")
       fu.rmdir("tmp")
+
       cfg_puts <<-CFG
-label plpbt
-	menu label PLoP Boot Manager
+label #{@dir}
+	menu label #{TITLE} #{@ver}
 	kernel #{@dir}/plpbt
       CFG
     end
@@ -514,6 +526,8 @@ label plpbt
 
 
   class FreedosBalder10 < SimpleMenu
+    TITLE = "Balder 10 (FreeDOS 1.0)"
+
     def initialize
       super("freedos", "balder10")
     end
@@ -522,23 +536,24 @@ label plpbt
       top.mirror(:balder10_img)
     end
 
-    def main(parent, top)
+    def main_after_download(download_file, parent, top)
       fu = top.fu
-      download_file = "#{top.download_dir}/freedos/#{File.basename(uri(top))}"
-      fu.mkpath(File.dirname(download_file))
-      top.download(download_file, uri(top))
-      fu.mkpath("freedos")
-      fu.cp(download_file, "freedos/#{File.basename(download_file)}")
+
+      img = "#{@dir}/#{File.basename(download_file)}"
+      fu.cp(download_file, img)
+
       cfg_puts <<-CFG
-label balder
-	menu label Balder 10 (FreeDOS 1.0)
+label #{@dir}
+	menu label #{TITLE}
 	kernel boot-screens/memdisk
-	append initrd=freedos/balder10.img
+	append initrd=#{img}
       CFG
     end
   end
 
-  class Gag < SimpleMenu
+  class GAG < SimpleMenu
+    TITLE = "GAG (Graphical Boot Manager)"
+
     def initialize(ver)
       super("gag", ver)
     end
@@ -547,48 +562,56 @@ label balder
       sprintf(top.mirror(:gag_zip), @ver.tr(".", "_"))
     end
 
-    def main(parent, top)
+    def main_after_download(download_file, parent, top)
       fu = top.fu
-      download_file = "#{top.download_dir}/gag/#{File.basename(uri(top))}"
-      fu.mkpath(File.dirname(download_file))
-      top.download(download_file, uri(top))
-      disk_dsk = "gag#{@ver}/disk.dsk"
-      unless File.exist?(disk_dsk)
-        top.xsystem("unzip", download_file, disk_dsk)
+      src_disk_dsk = "gag#{@ver}/disk.dsk"
+      dst_disk_dsk = "#{@dir}/disk.dsk"
+
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("unzip", download_file, src_disk_dsk)
       end
+      fu.mv("tmp/#{src_disk_dsk}", dst_disk_dsk)
+      fu.rm_rf("tmp/#{File.dirname(src_disk_dsk)}")
+      fu.rmdir("tmp")
+
       cfg_puts <<-CFG
-label gag#{@ver}
-	menu label GAG (Graphical Boot Manager)
+label #{@dir}
+	menu label #{TITLE} #{@ver}
 	kernel boot-screens/memdisk
-	append initrd=#{disk_dsk}
+	append initrd=#{dst_disk_dsk}
       CFG
     end
   end
 
 
   # http://elm-chan.org/fsw/mbm/mbm.html
-  class Mbm < SimpleMenu
-    def initialize
-      super("mbm", "0.39")
+  class MBM < SimpleMenu
+    TITLE = "MBM (Multiple Boot Manager)"
+
+    def initialize(ver)
+      super("mbm", ver)
     end
 
     def uri(top)
       top.mirror(:mbm_zip)
     end
 
-    def main(parent, top)
+    def main_after_download(download_file, parent, top)
       fu = top.fu
-      download_file = "#{top.download_dir}/mbm/#{File.basename(uri(top))}"
-      fu.mkpath(File.dirname(download_file))
-      top.download(download_file, uri(top))
-      fu.mkpath("mbm")
-      top.xsystem("unzip", download_file, "BIN/MBM.144")
-      fu.mv("BIN", "mbm/BIN")
+
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("unzip", download_file, "BIN/MBM.144")
+      end
+      fu.mv("tmp/BIN", "#{@dir}/BIN")
+      fu.rmdir("tmp")
+
       cfg_puts <<-CFG
 label mbm
-	menu label MBM (Multiple Boot Manager)
+	menu label #{TITLE} #{@ver}
 	kernel boot-screens/memdisk
-	append initrd=mbm/BIN/MBM.144
+	append initrd=#{@dir}/BIN/MBM.144
       CFG
     end
   end
@@ -787,24 +810,24 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--ping 3.00.03", "PING(Partimage Is Not Ghost)") do |v|
-        top_menu.push_sub_menu(Ping.new(v))
+      opts.on("--ping 3.00.03", PING::TITLE) do |v|
+        top_menu.push_sub_menu(PING.new(v))
       end
 
-      opts.on("--plop-boot-manager 5.0.4", "PLoP Boot Manager") do |v|
-        top_menu.push_sub_menu(PlopBootManager.new(v))
+      opts.on("--plop-boot-manager 5.0.4", PLoPBootManager::TITLE) do |v|
+        top_menu.push_sub_menu(PLoPBootManager.new(v))
       end
 
-      opts.on("--freedos-balder10", "Balder 10 (FreeDOS 1.0)") do |v|
+      opts.on("--freedos-balder10", FreedosBalder10::TITLE) do |v|
         top_menu.push_sub_menu(FreedosBalder10.new)
       end
 
-      opts.on("--gag 4.10", "GAG (Graphical Boot Manager)") do |v|
-        top_menu.push_sub_menu(Gag.new(v))
+      opts.on("--gag 4.10", GAG::TITLE) do |v|
+        top_menu.push_sub_menu(GAG.new(v))
       end
 
-      opts.on("--mbm", "MBM (Multiple Boot Manager)") do |v|
-        top_menu.push_sub_menu(Mbm.new)
+      opts.on("--mbm 0.39", MBM::TITLE) do |v|
+        top_menu.push_sub_menu(MBM.new(v))
       end
 
       opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
