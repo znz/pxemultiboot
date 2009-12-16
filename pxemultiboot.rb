@@ -971,6 +971,11 @@ LABEL floppy disk
         exit
       end
 
+      opts.on("--arg-file FILE", "read arguments from file") do |v|
+        args = File.readlines(v).map{|s|s.chomp}
+        argv.unshift(*args)
+      end
+
       opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
         syslinux_ver = v
       end
