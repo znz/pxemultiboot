@@ -1,15 +1,22 @@
 #!/usr/bin/ruby
 # -*- coding: utf-8 -*-
 =begin
-= PXE Multi Boot Helper
+= PXE Multi Boot environment builder
+This program builds PXE multi boot environment.
+
 == Requirements
 * Ruby 1.8.x or later
 * wget
 
 == Usage
-* ruby pxemultiboot-helper.rb --help
-* ruby pxemultiboot-helper.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03
+== build tftpboot
+* ruby pxemultiboot.rb --help
+* ruby pxemultiboot.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03
 
+== PXE boot
+* put tftpboot into tftpd's directory
+* setup dhcpd PXE bootable
+* boot some machine using PXE
 
 == License
 The MIT License
