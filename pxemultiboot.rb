@@ -539,14 +539,11 @@ label #{@dir}
 
   class FloppyImage < SimpleMenu
     def title
-      self.class::TITLE
+      "#{self.class::TITLE} #{@ver}"
     end
 
     def main_after_download(download_file, parent, top)
-      fu = top.fu
-
-      img = "#{@dir}/#{File.basename(download_file)}"
-      fu.cp(download_file, img)
+      img = install_img(download_file, parent, top)
 
       cfg_puts <<-CFG
 label #{@dir}
@@ -555,10 +552,20 @@ label #{@dir}
 	append initrd=#{img}
       CFG
     end
+
+    def install_img(download_file, parent, top)
+      img = "#{@dir}/#{File.basename(download_file)}"
+      top.fu.cp(download_file, img)
+      return img
+    end
   end
 
   class FreedosBalder10 < FloppyImage
     TITLE = "Balder 10 (FreeDOS 1.0)"
+
+    def title
+      TITLE
+    end
 
     def initialize
       super("freedos", "balder10")
@@ -569,7 +576,7 @@ label #{@dir}
     end
   end
 
-  class GAG < SimpleMenu
+  class GAG < FloppyImage
     TITLE = "GAG (Graphical Boot Manager)"
 
     def initialize(ver)
@@ -580,7 +587,7 @@ label #{@dir}
       sprintf(top.mirror(:gag_zip), @ver.tr(".", "_"))
     end
 
-    def main_after_download(download_file, parent, top)
+    def install_img(download_file, parent, top)
       fu = top.fu
       src_disk_dsk = "gag#{@ver}/disk.dsk"
       dst_disk_dsk = "#{@dir}/disk.dsk"
@@ -593,17 +600,12 @@ label #{@dir}
       fu.rm_rf("tmp/#{File.dirname(src_disk_dsk)}")
       fu.rmdir("tmp")
 
-      cfg_puts <<-CFG
-label #{@dir}
-	menu label #{TITLE} #{@ver}
-	kernel boot-screens/memdisk
-	append initrd=#{dst_disk_dsk}
-      CFG
+      return dst_disk_dsk
     end
   end
 
   # http://elm-chan.org/fsw/mbm/mbm.html
-  class MBM < SimpleMenu
+  class MBM < FloppyImage
     TITLE = "MBM (Multiple Boot Manager)"
 
     def initialize(ver)
@@ -614,7 +616,7 @@ label #{@dir}
       top.mirror(:mbm_zip)
     end
 
-    def main_after_download(download_file, parent, top)
+    def install_img(download_file, parent, top)
       fu = top.fu
 
       fu.mkpath("tmp")
@@ -624,12 +626,7 @@ label #{@dir}
       fu.mv("tmp/BIN", "#{@dir}/BIN")
       fu.rmdir("tmp")
 
-      cfg_puts <<-CFG
-label mbm
-	menu label #{TITLE} #{@ver}
-	kernel boot-screens/memdisk
-	append initrd=#{@dir}/BIN/MBM.144
-      CFG
+      return "#{@dir}/BIN/MBM.144"
     end
   end
 
