@@ -11,7 +11,7 @@ This program builds PXE multi boot environment.
 == Usage
 == build tftpboot
 * ruby pxemultiboot.rb --help
-* ruby pxemultiboot.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --memtest 4.00 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03
+* ruby pxemultiboot.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --memtest 4.00 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03 --grub4dos 0.4.4
 
 == PXE boot
 * put tftpboot into tftpd's directory
@@ -65,12 +65,14 @@ class PxeMultiBootHelper
       :vine => "http://ftp.vinelinux.org/pub/Vine",
       #:vine => "http://www.t.ring.gr.jp/pub/linux/Vine",
 
+      :memtest => "http://www.memtest.org/download/%s/memtest86+-%s.zip",
+
       :ping_release => "http://ping.windowsdream.com/ping/Releases",
       :plop_files => "http://download.plop.at/files/bootmngr",
       :balder10_img => "http://www.finnix.org/files/balder10.img",
       :mbm_zip => "http://my.vector.co.jp/servlet/System.FileDownload/download/http/0/35596/pack/dos/util/boot/mbm039.zip",
       :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
-      :memtest => "http://www.memtest.org/download/%s/memtest86+-%s.zip",
+      :grub4dos => "http://download.gna.org/grub4dos/grub4dos-%s.zip",
 
       # http://openlab.ring.gr.jp/oscircular/inetboot/index.html
       :inetboot => "http://ring.aist.go.jp/archives/linux/oscircular/iso",
@@ -668,6 +670,27 @@ label #{@dir}
     end
   end
 
+  class Grub4Dos < KernelImage
+    TITLE = "GRUB for DOS"
+
+    def initialize(ver)
+      super("grub4dos", ver)
+    end
+
+    def uri(top)
+      sprintf(top.mirror(:grub4dos), @ver)
+    end
+
+    def install_img(download_file, parent, top)
+      fu = top.fu
+
+      grub_exe = "#{@dir}/grub.exe"
+      top.xsystem("unzip", download_file, grub_exe)
+
+      return grub_exe
+    end
+  end
+
   # http://rom-o-matic.net/
   class GPXE < Menu
     TITLE = "gPXE"
@@ -1002,6 +1025,10 @@ LABEL floppy disk
 
       opts.on("--ping 3.00.03", PING::TITLE) do |v|
         top_menu.push_sub_menu(PING.new(v))
+      end
+
+      opts.on("--grub4dos 0.4.4", Grub4Dos::TITLE) do |v|
+        top_menu.push_sub_menu(Grub4Dos.new(v))
       end
 
       opts.on("--gpxe image.lkrn", "gPXE image file download from http://rom-o-matic.net/") do |v|
