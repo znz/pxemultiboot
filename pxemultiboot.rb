@@ -628,6 +628,54 @@ label mbm
     end
   end
 
+  # http://rom-o-matic.net/
+  class GPXE < Menu
+    TITLE = "gPXE"
+
+    def initialize(image_file)
+      @image_file = image_file
+      @basename = File.basename(image_file)
+      if /[0-9.+]+/ =~ @basename
+        @dir = "gpxe-#{$&}"
+      else
+        @dir = "gpxe"
+      end
+      super("boot-screens/gpxe-#{@basename}.cfg")
+    end
+
+    def main(parent, top)
+      fu = top.fu
+
+      basename = File.basename(@image_file)
+      fu.mkpath(@dir)
+      fu.cp(@image_file, @dir)
+
+      cfg_puts <<-CFG
+label #{basename}
+	menu label #{TITLE} (#{basename})
+      CFG
+      case basename
+      when /\.sdsk\z/
+        cfg_puts <<-CFG
+	kernel boot-screens/memdisk
+	append initrd=#{@dir}/#{basename}
+        CFG
+      when /\.lkrn\z/
+        cfg_puts <<-CFG
+	kernel #{@dir}/#{basename}
+        CFG
+      else
+        raise "unknown gPXE format: #{basename}"
+      end
+
+      parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      nil
+    end
+  end
+
   # http://openlab.ring.gr.jp/oscircular/inetboot/index.html
   class InetBoot < Menu
     def initialize(ver, label, title, append)
@@ -910,6 +958,11 @@ LABEL floppy disk
 
       opts.on("--ping 3.00.03", PING::TITLE) do |v|
         top_menu.push_sub_menu(PING.new(v))
+      end
+
+      opts.on("--gpxe image.lkrn", "gPXE image file download from http://rom-o-matic.net/") do |v|
+        image_file = File.expand_path(v)
+        top_menu.push_sub_menu(GPXE.new(image_file))
       end
 
       inetboot_sub_menu = nil
