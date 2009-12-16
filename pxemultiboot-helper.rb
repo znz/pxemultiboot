@@ -810,8 +810,12 @@ LABEL floppy disk
         end
       end
 
-      opts.on("--ping 3.00.03", PING::TITLE) do |v|
-        top_menu.push_sub_menu(PING.new(v))
+      opts.on("--mbm 0.39", MBM::TITLE) do |v|
+        top_menu.push_sub_menu(MBM.new(v))
+      end
+
+      opts.on("--gag 4.10", GAG::TITLE) do |v|
+        top_menu.push_sub_menu(GAG.new(v))
       end
 
       opts.on("--plop-boot-manager 5.0.4", PLoPBootManager::TITLE) do |v|
@@ -822,12 +826,8 @@ LABEL floppy disk
         top_menu.push_sub_menu(FreedosBalder10.new)
       end
 
-      opts.on("--gag 4.10", GAG::TITLE) do |v|
-        top_menu.push_sub_menu(GAG.new(v))
-      end
-
-      opts.on("--mbm 0.39", MBM::TITLE) do |v|
-        top_menu.push_sub_menu(MBM.new(v))
+      opts.on("--ping 3.00.03", PING::TITLE) do |v|
+        top_menu.push_sub_menu(PING.new(v))
       end
 
       opts.on("--syslinux VERSION", "Specify SYSLINUX version (default:#{syslinux_ver})") do |v|
