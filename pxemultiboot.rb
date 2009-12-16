@@ -11,7 +11,7 @@ This program builds PXE multi boot environment.
 == Usage
 == build tftpboot
 * ruby pxemultiboot.rb --help
-* ruby pxemultiboot.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03
+* ruby pxemultiboot.rb --debian lenny,etch,etchnhalf,squeeze,sid --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid --fedora 12,11,10,9 --centos 5.4,5.3,4.8,4.7 --vine 5.0,4.2 --memtest 4.00 --mbm 0.39 --plop-boot-manager 5.0.4 --freedos-balder10 --gag 4.10 --ping 3.00.03
 
 == PXE boot
 * put tftpboot into tftpd's directory
@@ -70,6 +70,7 @@ class PxeMultiBootHelper
       :balder10_img => "http://www.finnix.org/files/balder10.img",
       :mbm_zip => "http://my.vector.co.jp/servlet/System.FileDownload/download/http/0/35596/pack/dos/util/boot/mbm039.zip",
       :gag_zip => "http://downloads.sourceforge.net/gag/gag%s.zip",
+      :memtest => "http://www.memtest.org/download/%s/memtest86+-%s.zip",
 
       # http://openlab.ring.gr.jp/oscircular/inetboot/index.html
       :inetboot => "http://ring.aist.go.jp/archives/linux/oscircular/iso",
@@ -560,6 +561,18 @@ label #{@dir}
     end
   end
 
+  class KernelImage < FloppyImage
+    def main_after_download(download_file, parent, top)
+      img = install_img(download_file, parent, top)
+
+      cfg_puts <<-CFG
+label #{@dir}
+	menu label #{title}
+	kernel #{img}
+      CFG
+    end
+  end
+
   class FreedosBalder10 < FloppyImage
     TITLE = "Balder 10 (FreeDOS 1.0)"
 
@@ -627,6 +640,31 @@ label #{@dir}
       fu.rmdir("tmp")
 
       return "#{@dir}/BIN/MBM.144"
+    end
+  end
+
+  class Memtest < KernelImage
+    TITLE = "Memtest86+"
+
+    def initialize(ver)
+      super("memtest", ver)
+    end
+
+    def uri(top)
+      sprintf(top.mirror(:memtest), @ver, @ver)
+    end
+
+    def install_img(download_file, parent, top)
+      fu = top.fu
+
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("unzip", download_file, "memtest86+-#{@ver}.bin")
+      end
+      memtest_bin = "#{@dir}/memtest86+"
+      fu.mv("tmp/memtest86+-#{@ver}.bin", memtest_bin)
+      fu.rmdir("tmp")
+      return memtest_bin
     end
   end
 
@@ -940,6 +978,10 @@ LABEL floppy disk
             vine.push_sub_menu(Anaconda.new(options))
           end
         end
+      end
+
+      opts.on("--memtest 4.00", Memtest::TITLE) do |v|
+        top_menu.push_sub_menu(Memtest.new(v))
       end
 
       opts.on("--mbm 0.39", MBM::TITLE) do |v|
