@@ -490,8 +490,11 @@ label mainmenu
       super("boot-screens/#{@dir}.cfg")
     end
 
-    def main(parent, top)
+    def title
+      "#{self.class::TITLE} #{@ver}"
+    end
 
+    def main(parent, top)
       fu = top.fu
       download_uri = uri(top)
       download_file = "#{top.download_dir}/#{@name}/#{File.basename(download_uri)}"
@@ -541,10 +544,6 @@ label #{@dir}
   end
 
   class FloppyImage < SimpleMenu
-    def title
-      "#{self.class::TITLE} #{@ver}"
-    end
-
     def main_after_download(download_file, parent, top)
       img = install_img(download_file, parent, top)
 
@@ -670,7 +669,7 @@ label #{@dir}
     end
   end
 
-  class Grub4Dos < KernelImage
+  class Grub4Dos < SimpleMenu
     TITLE = "GRUB for DOS"
 
     def initialize(ver)
@@ -681,13 +680,27 @@ label #{@dir}
       sprintf(top.mirror(:grub4dos), @ver)
     end
 
-    def install_img(download_file, parent, top)
+    def main_after_download(download_file, parent, top)
       fu = top.fu
 
       grub_exe = "#{@dir}/grub.exe"
-      top.xsystem("unzip", download_file, grub_exe)
+      files = [grub_exe, "#{@dir}/menu.lst"]
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("unzip", download_file, *files)
+      end
+      files.each do |file|
+        fu.mv("tmp/#{file}", file)
+      end
+      fu.rmdir("tmp/#{@dir}")
+      fu.rmdir("tmp")
 
-      return grub_exe
+      cfg_puts <<-CFG
+label #{@dir}
+	menu label #{title}
+	kernel #{grub_exe}
+	append keeppxe --config-file="pxe basedir /;configfile (pd)/#{@dir}/menu.lst"
+      CFG
     end
   end
 
