@@ -512,37 +512,6 @@ label mainmenu
     end
   end
 
-  # http://www.plop.at/en/bootmanager.html
-  class PLoPBootManager < SimpleMenu
-    TITLE = "PLoP Boot Manager"
-
-    def initialize(ver)
-      super("plop", ver)
-    end
-
-    def uri(top)
-      "#{top.mirror(:plop_files)}/plpbt-#{@ver}.zip"
-    end
-
-    def main_after_download(download_file, parent, top)
-      fu = top.fu
-
-      fu.mkpath("tmp")
-      fu.chdir("tmp") do
-        top.xsystem("7z", "x", download_file)
-      end
-      fu.mv("tmp/plpbt-#{@ver}/plpbt.bin", "#{@dir}/plpbt")
-      fu.rm_rf("tmp/plpbt-#{@ver}")
-      fu.rmdir("tmp")
-
-      cfg_puts <<-CFG
-label #{@dir}
-	menu label #{TITLE} #{@ver}
-	kernel #{@dir}/plpbt
-      CFG
-    end
-  end
-
   class FloppyImage < SimpleMenu
     def main_after_download(download_file, parent, top)
       img = install_img(download_file, parent, top)
@@ -577,6 +546,7 @@ label #{@dir}
   class FreedosBalder10 < FloppyImage
     TITLE = "Balder 10 (FreeDOS 1.0)"
 
+    # title without ver
     def title
       TITLE
     end
@@ -644,6 +614,35 @@ label #{@dir}
     end
   end
 
+  # http://www.plop.at/en/bootmanager.html
+  class PLoPBootManager < KernelImage
+    TITLE = "PLoP Boot Manager"
+
+    def initialize(ver)
+      super("plop", ver)
+    end
+
+    def uri(top)
+      "#{top.mirror(:plop_files)}/plpbt-#{@ver}.zip"
+    end
+
+    def install_img(download_file, parent, top)
+      fu = top.fu
+
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("7z", "x", download_file)
+      end
+
+      plpbt = "#{@dir}/plpbt"
+      fu.mv("tmp/plpbt-#{@ver}/plpbt.bin", plpbt)
+      fu.rm_rf("tmp/plpbt-#{@ver}")
+      fu.rmdir("tmp")
+
+      return plpbt
+    end
+  end
+
   class Memtest < KernelImage
     TITLE = "Memtest86+"
 
@@ -662,9 +661,11 @@ label #{@dir}
       fu.chdir("tmp") do
         top.xsystem("unzip", download_file, "memtest86+-#{@ver}.bin")
       end
+
       memtest_bin = "#{@dir}/memtest86+"
       fu.mv("tmp/memtest86+-#{@ver}.bin", memtest_bin)
       fu.rmdir("tmp")
+
       return memtest_bin
     end
   end
