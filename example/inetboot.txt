@@ -1,0 +1,13 @@
+--inetboot=lenny-live-kde,Debian Lenny LiveCD KDE Beta1 (caper),netdir=http://192.168.0.1/InetBoot/debian-live-lenny-i386-kde-desktop.iso type=casper
+--inetboot=lenny-live-gnome,Debian Lenny LiveCD GNOME Beta1 (caper),netdir=http://192.168.0.1/InetBoot/debian-live-lenny-i386-gnome-desktop.iso type=casper
+--inetboot=fedora9,Fedora9,netdir=http://192.168.0.1/InetBoot/Fedora-9-i686-Live.iso type=fedora
+--inetboot=fedora8,Fedora8,netdir=http://192.168.0.1/InetBoot/Fedora-8-Live-i686.iso type=fedora
+--inetboot=ubuntu804,Ubuntu 8.04 (casper),netdir=http://192.168.0.1/InetBoot/ubuntu-8.04-desktop-i386.iso type=casper
+--inetboot=ubuntu710,Ubuntu 7.10 (casper),netdir=http://192.168.0.1/InetBoot/ubuntu-7.10-desktop-i386.iso type=casper
+--inetboot=ubuntu704,Ubuntu 7.04 (casper),netdir=http://192.168.0.1/InetBoot/ubuntu-7.04-desktop-i386.iso type=casper
+--inetboot=x64fedora9,x86_64 Fedora9,netdir=http://192.168.0.1/InetBoot/Fedora-9-x86_64-Live.iso type=fedora acpi=off
+--inetboot=x64ubuntu804,x86_64 Ubuntu 8.04 (casper),netdir=http://192.168.0.1/InetBoot/ubuntu-8.04.1-desktop-amd64.iso type=casper
+--inetboot=knoppix531,KNOPPIX 5.3.1 (Remastered CD),netdir=http://192.168.0.1/InetBoot/knoppix_v5.3.1CD_20080326-20080520.iso type=knoppix ramdisk_size=100000 lang=us
+--inetboot=vmknoppix,VMKnoppix(Xen3.2.1),netdir=http://192.168.0.1/InetBoot/knoppix_v5.3.1CD_xen3.2.1-080519.iso  bootxen=1 type=knoppix ramdisk_size=100000 lang=us vga=normal
+--inetboot=knoppix531ja,KNOPPIX 5.3.1 (Remastered CD) ja,netdir=http://192.168.0.1/InetBoot/knoppix_v5.3.1CD_20080326-20080520.iso type=knoppix ramdisk_size=100000 lang=ja screen=1024x768
+--inetboot=knoppix531javesa,KNOPPIX 5.3.1 (Remastered CD) ja VESA,netdir=http://192.168.0.1/InetBoot/knoppix_v5.3.1CD_20080326-20080520.iso type=knoppix ramdisk_size=100000 lang=ja xmodule=vesa screen=1024x768

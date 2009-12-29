@@ -1,0 +1,5 @@
+--debian=lenny,etch,etchnhalf,squeeze,sid
+--ubuntu=karmic,hardy,jaunty,intrepid,dapper,lucid
+--fedora=12,11,10,9
+--centos=5.4,5.3,4.8,4.7
+--vine=5.0,4.2

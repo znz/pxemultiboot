@@ -1,0 +1,7 @@
+--memtest=4.00
+--mbm=0.39
+--plop-boot-manager=5.0.4
+--freedos-balder10
+--gag=4.10
+--ping=3.00.03
+--grub4dos=0.4.4
