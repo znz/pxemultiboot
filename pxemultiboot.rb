@@ -7,6 +7,10 @@ This program builds PXE multi boot environment.
 == Requirements
 * Ruby 1.8.x or later
 * wget
+* GNU tar (and gzip, bzip2)
+
+Optional:
+* unzip for some options
 
 == Usage
 == build tftpboot
@@ -631,7 +635,7 @@ label #{@dir}
 
       fu.mkpath("tmp")
       fu.chdir("tmp") do
-        top.xsystem("7z", "x", download_file)
+        top.xsystem("unzip", download_file)
       end
 
       plpbt = "#{@dir}/plpbt"
