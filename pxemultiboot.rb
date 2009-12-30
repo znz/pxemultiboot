@@ -611,10 +611,11 @@ label #{@dir}
       fu.chdir("tmp") do
         top.xsystem("unzip", download_file, "BIN/MBM.144")
       end
-      fu.mv("tmp/BIN", "#{@dir}/BIN")
+      fu.mv("tmp/BIN/MBM.144", @dir)
+      fu.rmdir("tmp/BIN")
       fu.rmdir("tmp")
 
-      return "#{@dir}/BIN/MBM.144"
+      return "#{@dir}/MBM.144"
     end
   end
 
