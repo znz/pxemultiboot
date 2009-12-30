@@ -1,0 +1,9 @@
+digraph B {
+  graph [rankdir = LR];
+  multi [label="Multi Boot Menu"];
+  PXE -> multi;
+  multi -> "Debian-Installer";
+  multi -> "Anaconda";
+  multi -> "GRUB for DOS";
+  multi -> "memtest86+";
+}

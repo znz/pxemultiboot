@@ -1,0 +1,127 @@
+# -*- coding: utf-8 -*-
+= PXE Multi Boot
+: author
+    西山和広
+: theme
+    lightning-clear-blue
+
+= Agenda
+* PXE Boot
+* Example
+* Test using qemu
+* Setup PXE Boot Server
+
+= PXE Boot
+* Preboot Execution Environment
+  * Network Booting
+* DHCP (BOOTP), TFTP
+
+= Booting
+* BIOS, EFI, ...
+* MBR, El Torito, PXE, ...
+  * LILO, GRUB, SYSLINUX, ...
+* Linux, Windows, ...
+= Booting
+
+  # image
+  # src = booting.png
+  # keep_ratio = true
+
+= SYSLINUX
+# cite from syslinux-3.83/doc/syslinux.txt
+ SYSLINUX - MS-DOS/Windows FAT filesystem
+ PXELINUX - PXE network booting
+ ISOLINUX - ISO9660 CD-ROM
+ EXTLINUX - Linux ext2/ext3 filesystem
+
+ MEMDISK simulates a disk
+
+= PXE Bootable (1)
+* Installer
+  * Debian-Installer
+    * Debian, Ubuntu
+  * Anaconda
+    * Fedora, CentOS, Vine, ...
+= PXE Bootable (2)
+* Small Program (~32MiB)
+  * Boot Loader
+    * GRUB for DOS, MBM, GAG, ...
+  * Floppy image (MEMDISK)
+    * FreeDOS, ...
+  * memtest86+, ...
+#* max 32MiB-1 per file (tftp protocol limit)
+= PXE Bootable (3)
+* OS with NFS Root
+  * Linux, ...
+* InetBoot (with http)
+  * KNOPPIX, Fedora, Debian, Ubuntu, ...
+
+= PXE Multi Boot
+PXE Multi Boot environment builder
+
+ # image
+ # src = pxemultiboot.png
+ # keep_ratio = true
+
+= Example (1)
+  ruby pxemultiboot.rb \
+    --debian lenny,etch,etchnhalf,squeeze,sid \
+    --ubuntu karmic,hardy,jaunty,intrepid,dapper,lucid \
+    --fedora 12,11,10,9 \
+    --centos 5.4,5.3,4.8,4.7 \
+    --vine 5.0,4.2 \
+    --memtest 4.00 \
+    --mbm 0.39 \
+    --plop-boot-manager 5.0.4 \
+    --freedos-balder10 \
+    --gag 4.10 \
+    --ping 3.00.03 \
+    --grub4dos 0.4.4
+
+= Example (2)
+ ruby pxemultiboot.rb -f example/installer.txt
+ ruby pxemultiboot.rb -f example/misc.txt
+ ruby pxemultiboot.rb \
+   -f example/installer.txt \
+   -f example/misc.txt
+
+= PXE Boot Test
+ qemu -boot n -tftp tftpboot -bootp /pxelinux.0 -m 512
+* qemu boot from local
+* require PXE ROM (BIOS)
+= qemu (lenny)
+ sudo aptitude install kvm
+ sudo ln -s \
+  ../kvm/pxe-ne2k_pci.bin \
+  /usr/share/qemu/pxe-ne2k_pci.bin
+* In Debian:
+  * ((<"bugs.debian.org/412010"|URL:http://bugs.debian.org/412010>))
+= qemu (karmic)
+  sudo apt-get install kvm-pxe
+
+= PXE Boot Server
+* TFTP: tftpd-hpa, ...
+* DHCP: dhcp3-server, dnsmasq, ...
+
+= tftpd-hpa
+copy
+  * tftpboot/* (built by pxemultiboot.rb)
+to
+  * /var/lib/tftpboot/
+
+= dhcp3-server
+in /etc/dhcp3/dhcpd.conf:
+ subnet 192.168.0.0 netmask 255.255.255.0 {
+     range 192.168.0.200 192.168.0.220;
+     option routers 192.168.0.1;
+     option subnet-mask 255.255.255.0;
+     # PXE boot
+     filename "/pxelinux.0";
+     next-server 192.168.0.1; # tftpd
+ }
+# all DHCP clients are PXE bootable
+
+= まとめ
+* PXE Bootは便利
+* pxemultibootで複数のInstaller等を同時に用意
+* 非常時にrescue環境が起動可能

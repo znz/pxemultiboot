@@ -1,0 +1,15 @@
+digraph B {
+  BIOS -> MBR;
+  BIOS -> "El Torito";
+  BIOS -> PXE;
+  MBR -> LILO;
+  LILO -> Linux;
+  MBR -> GRUB;
+  GRUB -> Linux;
+  GRUB -> Windows;
+  "El Torito" -> ISOLINUX;
+  PXE -> PXELINUX;
+  ISOLINUX -> "Live CD";
+  ISOLINUX -> Installer;
+  PXELINUX -> Installer;
+}
