@@ -1109,7 +1109,7 @@ LABEL floppy disk
         exit
       end
 
-      opts.on("--arg-file FILE", "read arguments from file") do |v|
+      opts.on("-f", "--arg-file FILE", "read arguments from file") do |v|
         args = File.readlines(v).map{|s|s.chomp}
         argv.unshift(*args)
       end
