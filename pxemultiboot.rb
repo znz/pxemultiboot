@@ -899,14 +899,13 @@ LABEL floppy disk
               debian.push_sub_menu(d_i)
             end
           when "sid"
-            # 2009-12-16:
-            # sid/main/installer-amd64/current/images/netboot/gtk/
+            # 2009-12-30:
+            # sid/main/installer-{i386,amd64}/current/images/netboot/gtk/
             # (current -> 20091215)
             # missing now.
             [
               DebianInstaller.new(suite, title),
               DebianInstaller.new(suite, title, :arch => "amd64"),
-              DebianInstaller.new(suite, title, :gtk => true),
             ].each do |d_i|
               debian.push_sub_menu(d_i)
             end
