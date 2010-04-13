@@ -354,6 +354,80 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
     end
   end
 
+  class DebianLive < Menu
+    def initialize(binary_net_tar, title)
+      @binary_net_tar = File.expand_path(binary_net_tar)
+      @title = title
+      super("boot-screens/debian-live-#{base}.cfg")
+    end
+
+    def binary_net_tar
+      @binary_net_tar
+    end
+
+    def base
+      @base ||= File.basename(binary_net_tar).sub(/\..*\z/, '')
+    end
+
+    def extract_dir
+      "debian-live"
+    end
+
+    def live_dir
+      "debian-live/#{base}"
+    end
+
+    def arch
+      "i386"
+    end
+
+    def main(parent, top)
+      fu = top.fu
+
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("tar", "xf", binary_net_tar, "tftpboot/#{extract_dir}/#{arch}")
+      end
+
+      fu.rm_rf(live_dir)
+      fu.mkpath(live_dir)
+      fu.mv("tmp/tftpboot/#{extract_dir}/#{arch}", live_dir)
+      fu.rmdir("tmp/tftpboot/#{extract_dir}")
+      fu.rmdir("tmp/tftpboot")
+      fu.rmdir("tmp")
+
+      menu_cfg = "#{live_dir}/#{arch}/boot-screens/menu.cfg"
+      proc_cfg_file = proc do |cfg_filename|
+        File.foreach(cfg_filename) do |line|
+          line.gsub!(extract_dir) { live_dir }
+          if /\s*include (\S+)/ =~ line
+            if File.exist?($1)
+              cfg_puts '#^^^ ' + line
+              proc_cfg_file.call($1)
+              cfg_puts '#$$$ ' + line
+            else
+              cfg_puts '#### ' + line
+            end
+          else
+            cfg_puts line
+          end
+        end
+      end
+      proc_cfg_file.call(menu_cfg)
+
+      kernel = "#{live_dir}/#{arch}/boot-screens/vesamenu.c32"
+      unless File.exist?(kernel)
+        kernel = "boot-screens/vesamenu.c32"
+      end
+      parent.cfg_puts <<-CFG
+label debian-live-#{base}
+	menu label #{@title}
+	kernel #{kernel}
+	append boot-screens/debian-live-#{base}.cfg
+      CFG
+    end
+  end # DebianLive
+
   class Anaconda < Menu
     def initialize(options)
       @distro = options[:distro]
@@ -920,6 +994,13 @@ LABEL floppy disk
             end
           end
         end
+      end
+
+      debian_live_title = "Debian Live"
+      opts.on("--debian-live path/to/binary-net.tar.gz:DebianLive_SubTitle", /\A([^:]+):(.+)\Z/, debian_live_title) do |match|
+        path, title = match.split(/:/, 2)
+        debian_live = DebianLive.new(path, title)
+        top_menu.push_sub_menu(debian_live)
       end
 
       ubuntu_suites = {
