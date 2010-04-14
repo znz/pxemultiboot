@@ -1195,7 +1195,11 @@ LABEL floppy disk
       end
 
       opts.on("-f", "--arg-file FILE", "read arguments from file") do |v|
-        args = File.readlines(v).map{|s|s.chomp}
+        args = []
+        File.foreach(v) do |s|
+          next if /\A\s*\#/ =~ s
+          args.push s.chomp
+        end
         argv.unshift(*args)
       end
 
