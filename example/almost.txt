@@ -9,7 +9,7 @@
 # http://www.ubuntu.com/
 --ubuntu=lucid,karmic,hardy,jaunty,intrepid
 # http://fedoraproject.org/
---fedora=12,11,10,9
+--fedora=12,11
 # http://www.centos.org/
 --centos=5.4,4.8
 # http://www.vinelinux.org/
