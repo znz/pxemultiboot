@@ -972,7 +972,7 @@ LABEL floppy disk
             ].each do |d_i|
               debian.push_sub_menu(d_i)
             end
-          when "sid"
+          when "sid", "squeeze"
             # 2009-12-30:
             # sid/main/installer-{i386,amd64}/current/images/netboot/gtk/
             # (current -> 20091215)
