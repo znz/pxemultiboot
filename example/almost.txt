@@ -11,7 +11,7 @@
 # http://fedoraproject.org/
 --fedora=12,11
 # http://www.centos.org/
---centos=5.4,4.8
+--centos=5.5,4.8
 # http://www.vinelinux.org/
 --vine=5.1,4.2
 # http://www.memtest.org/
