@@ -9,23 +9,23 @@
 # http://www.ubuntu.com/
 --ubuntu=lucid,karmic,hardy,jaunty,intrepid
 # http://fedoraproject.org/
---fedora=12,11
+--fedora=13,12,11
 # http://www.centos.org/
 --centos=5.5,4.8
 # http://www.vinelinux.org/
 --vine=5.1,4.2
 # http://www.memtest.org/
---memtest=4.00
+--memtest=4.10
 # http://elm-chan.org/fsw/mbm/mbm.html
 --mbm=0.39
 # http://www.plop.at/en/bootmanager.html
---plop-boot-manager=5.0.8
+--plop-boot-manager=5.0.10
 # http://www.finnix.org/files/
 --freedos-balder10
 # http://gag.sourceforge.net/
 --gag=4.10
 # http://ping.windowsdream.com/ping/Releases/
---ping=3.00.03
+--ping=3.00.04
 # http://sourceforge.net/projects/grub4dos/
 --grub4dos=0.4.4
 # download from http://rom-o-matic.net/gpxe/gpxe-1.0.0/contrib/rom-o-matic/
