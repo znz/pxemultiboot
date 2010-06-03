@@ -1017,6 +1017,7 @@ label #{@label}
     end
     [
       "com32/menu/vesamenu.c32",
+      "com32/hdt/hdt.c32",
       "com32/modules/reboot.c32",
       #"com32/modules/chain.c32",
       "memdisk/memdisk",
@@ -1048,6 +1049,8 @@ menu begin SYSLINUX
       menu label ^Back..
       menu exit
 
+LABEL hdt
+      KERNEL boot-screens/hdt.c32
 LABEL Poweroff
       KERNEL boot-screens/poweroff.com
 LABEL Reboot
