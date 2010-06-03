@@ -1042,6 +1042,12 @@ timeout 0
     end
     open("boot-screens/misc.cfg", "w") do |f|
       f.write <<-CFG
+menu begin SYSLINUX
+  menu title Syslinux
+    LABEL mainmenu
+      menu label ^Back..
+      menu exit
+
 LABEL Poweroff
       KERNEL boot-screens/poweroff.com
 LABEL Reboot
@@ -1052,6 +1058,8 @@ LABEL 2nd local disk
       localboot 0x81
 LABEL floppy disk
       localboot 0x00
+
+menu end
       CFG
     end
 
