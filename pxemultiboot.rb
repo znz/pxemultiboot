@@ -11,6 +11,7 @@ This program builds PXE multi boot environment.
 
 Optional:
 * unzip for some options
+* bsdtar for --ubuntu-casper (ubuntu live iso)
 
 == Usage
 == build tftpboot
@@ -427,6 +428,111 @@ label debian-live-#{base}
       CFG
     end
   end # DebianLive
+
+  class UbuntuCasper < Menu
+    def initialize(ubuntu_iso, nfsroot, title)
+      @ubuntu_iso = File.expand_path(ubuntu_iso)
+      @nfsroot = nfsroot
+      @title = title
+      super("boot-screens/ubuntu-casper-#{base}.cfg")
+    end
+
+    def ubuntu_iso
+      @ubuntu_iso
+    end
+
+    def nfsroot
+      @nfsroot
+    end
+
+    def base
+      @base ||= File.basename(ubuntu_iso).sub(/\.iso\z/, '')
+    end
+
+    def live_dir
+      "ubuntu-casper/#{base}"
+    end
+
+    def main(parent, top)
+      fu = top.fu
+
+      fu.mkpath("tmp/casper")
+      fu.chdir("tmp") do
+        files = [
+          "casper/initrd.gz",
+          "casper/initrd.lz",
+          "casper/vmlinuz",
+          "isolinux",
+          "preseed",
+        ]
+        top.xsystem("bsdtar", "-xf", ubuntu_iso, *files)
+        fu.chmod(0755, ["casper", "isolinux", "preseed"])
+        fu.chmod(0644, Dir.glob("{casper,isolinux,preseed}/*"))
+      end
+
+      fu.rm_rf(live_dir)
+      fu.mkpath("#{live_dir}/casper")
+      [
+        "initrd.gz",
+        "initrd.lz",
+        "vmlinuz",
+      ].each do |filename|
+        if File.exist?("tmp/casper/#{filename}")
+          fu.mv("tmp/casper/#{filename}", "#{live_dir}/casper/#{filename}")
+        end
+      end
+      fu.mv("tmp/isolinux", live_dir)
+      fu.mv("tmp/preseed", live_dir)
+      fu.rmdir("tmp/casper")
+      fu.rmdir("tmp")
+
+      isolinux_cfg = "#{live_dir}/isolinux/isolinux.cfg"
+      proc_cfg_file = proc do |cfg_filename|
+        File.foreach(cfg_filename) do |line|
+          if /\s*include (\S+)/ =~ line
+            if File.exist?("#{live_dir}/isolinux/#{$1}")
+              cfg_puts '#^^^ ' + line
+              proc_cfg_file.call("#{live_dir}/isolinux/#{$1}")
+              cfg_puts '#$$$ ' + line
+            else
+              cfg_puts '#### ' + line
+            end
+          else
+            line.gsub!(/(\S+\s+)(?=(\S+))/) do
+              match, filename = $~.captures
+              if File.exist?("#{live_dir}/isolinux/#{filename}")
+                "#{match}/#{live_dir}/isolinux/"
+              else
+                match
+              end
+            end
+            line.sub!(/kernel\s+|initrd=/) do
+              "#{$&}#{live_dir}"
+            end
+            line.sub!(/boot=casper/) do
+              "#{$&} netboot=nfs nfsroot=#{nfsroot}"
+            end
+            line.sub!(/^timeout/i) do
+              "\##{$&}"
+            end
+            cfg_puts line
+          end
+        end
+      end
+      proc_cfg_file.call(isolinux_cfg)
+
+      kernel = "#{live_dir}/isolinux/vesamenu.c32"
+      unless File.exist?(kernel)
+        kernel = "boot-screens/vesamenu.c32"
+      end
+      parent.cfg_puts <<-CFG
+label ubuntu-casper-#{base}
+	menu label #{@title}
+	kernel #{kernel}
+	append boot-screens/ubuntu-casper-#{base}.cfg
+      CFG
+    end
+  end # UbuntuCasper
 
   class Anaconda < Menu
     def initialize(options)
@@ -1001,6 +1107,13 @@ LABEL floppy disk
         path, title = match.split(/:/, 2)
         debian_live = DebianLive.new(path, title)
         top_menu.push_sub_menu(debian_live)
+      end
+
+      ubuntu_casper_title = "Ubuntu Casper"
+      opts.on("--ubuntu-casper path/to/ubuntu.iso:nfs-server-ip:path/to/live:Ubuntu Casper_SubTitle", /\A([^:]+):(.+)\Z/, ubuntu_casper_title) do |match|
+        path, nfs_ip, nfs_path, title = match.split(/:/, 4)
+        ubuntu_casper = UbuntuCasper.new(path, "#{nfs_ip}:#{nfs_path}", title)
+        top_menu.push_sub_menu(ubuntu_casper)
       end
 
       ubuntu_suites = {
