@@ -34,3 +34,5 @@
 # download from http://rom-o-matic.net/gpxe/gpxe-1.0.0/contrib/rom-o-matic/
 --gpxe=example/gpxe-1.0.0-gpxe.lkrn
 --gpxe=example/gpxe-1.0.0-gpxe.sdsk
+# see http://d.hatena.ne.jp/shinichiro_h/20081025#1224864989
+--image-file=fizzbuzz;http://shinh.skr.jp/dat_dir/fizzbuzz7.gif

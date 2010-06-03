@@ -668,9 +668,9 @@ label mainmenu
 
   class SimpleMenu < Menu
     def initialize(name, ver)
-      @name = name
-      @ver = ver
-      @dir = "#{@name}-#{@ver}"
+      @name ||= name
+      @ver ||= ver
+      @dir ||= "#{@name}-#{@ver}"
       super("boot-screens/#{@dir}.cfg")
     end
 
@@ -724,6 +724,23 @@ label #{@dir}
 	menu label #{title}
 	kernel #{img}
       CFG
+    end
+  end
+
+  class ImageFile < FloppyImage
+    def initialize(title, uri)
+      @title = title
+      @uri = uri
+      @dir = "image"
+      super("image", "dummy_ver")
+    end
+
+    def title
+      @title
+    end
+
+    def uri(top)
+      @uri
     end
   end
 
@@ -1246,6 +1263,11 @@ LABEL floppy disk
       opts.on("--gpxe image.lkrn", "gPXE image file download from http://rom-o-matic.net/") do |v|
         image_file = File.expand_path(v)
         top_menu.push_sub_menu(GPXE.new(image_file))
+      end
+
+      opts.on("--image-file 'Image Title;uri-of-image-file'", /\A[^;]+;.+\Z/, "Disk Image File") do |match|
+        title, uri = match.split(/;/, 2)
+        top_menu.push_sub_menu(ImageFile.new(title, uri))
       end
 
       inetboot_sub_menu = nil
