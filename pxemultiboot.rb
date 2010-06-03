@@ -430,10 +430,10 @@ label debian-live-#{base}
   end # DebianLive
 
   class UbuntuCasper < Menu
-    def initialize(ubuntu_iso, nfsroot, title)
+    def initialize(ubuntu_iso, title, casper_options)
       @ubuntu_iso = File.expand_path(ubuntu_iso)
-      @nfsroot = nfsroot
       @title = title
+      @casper_options = casper_options
       super("boot-screens/ubuntu-casper-#{base}.cfg")
     end
 
@@ -441,8 +441,8 @@ label debian-live-#{base}
       @ubuntu_iso
     end
 
-    def nfsroot
-      @nfsroot
+    def casper_options
+      @casper_options
     end
 
     def base
@@ -510,7 +510,7 @@ label debian-live-#{base}
               "#{$&}#{live_dir}"
             end
             line.sub!(/boot=casper/) do
-              "#{$&} netboot=nfs nfsroot=#{nfsroot}"
+              "#{$&} #{casper_options}"
             end
             line.sub!(/^timeout/i) do
               "\##{$&}"
@@ -1103,16 +1103,16 @@ LABEL floppy disk
       end
 
       debian_live_title = "Debian Live"
-      opts.on("--debian-live path/to/binary-net.tar.gz:DebianLive_SubTitle", /\A([^:]+):(.+)\Z/, debian_live_title) do |match|
-        path, title = match.split(/:/, 2)
+      opts.on("--debian-live 'path/to/binary-net.tar.gz;Debian Live SubTitle'", /\A[^;]+;.+\Z/, debian_live_title) do |match|
+        path, title = match.split(/;/, 2)
         debian_live = DebianLive.new(path, title)
         top_menu.push_sub_menu(debian_live)
       end
 
       ubuntu_casper_title = "Ubuntu Casper"
-      opts.on("--ubuntu-casper path/to/ubuntu.iso:nfs-server-ip:path/to/live:Ubuntu Casper_SubTitle", /\A([^:]+):(.+)\Z/, ubuntu_casper_title) do |match|
-        path, nfs_ip, nfs_path, title = match.split(/:/, 4)
-        ubuntu_casper = UbuntuCasper.new(path, "#{nfs_ip}:#{nfs_path}", title)
+      opts.on("--ubuntu-casper 'path/to/ubuntu.iso;Ubuntu Casper SubTitle;netboot=nfs nfs-server-ip:path/to/live'", /\A[^;]+;[^;]+;.+\Z/, ubuntu_casper_title) do |match|
+        path, title, casper_options = match.split(/;/, 3)
+        ubuntu_casper = UbuntuCasper.new(path, title, casper_options)
         top_menu.push_sub_menu(ubuntu_casper)
       end
 

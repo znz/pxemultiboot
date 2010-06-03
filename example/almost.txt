@@ -2,13 +2,11 @@
 # see http://www.kernel.org/pub/linux/utils/boot/syslinux/
 --syslinux=3.86
 # Ubuntu ISO
-#--ubuntu-casper=ubuntu-ja-10.04-desktop-i386-20100512.iso:192.168.253.29:/srv/nfs/live/ubuntu-ja-10.04-desktop-i386-20100512:Live Lucid ja i386
-## ugly hack to add boot options
---ubuntu-casper=ubuntu-ja-10.04-desktop-i386-20100512.iso:192.168.0.1:/srv/nfs/live/ubuntu-ja-10.04-desktop-i386-20100512 i915.modeset=1 debian-installer/language=ja console-setup/layoutcode?=jp console-setup/modelcode?=jp106 maybe-ubiquity:Live Lucid ja i386
---ubuntu-casper=ubuntu-ja-8.04.2-desktop-i386.iso:192.168.0.1:/srv/nfs/live/ubuntu-ja-8.04.2-desktop-i386:Live Hardy ja i386
+--ubuntu-casper=ubuntu-ja-10.04-desktop-i386-20100512.iso;Live Lucid ja i386;192.168.0.1:/srv/nfs/live/ubuntu-ja-10.04-desktop-i386-20100512 i915.modeset=1
+--ubuntu-casper=ubuntu-ja-8.04.2-desktop-i386.iso;Live Hardy ja i386;192.168.0.1:/srv/nfs/live/ubuntu-ja-8.04.2-desktop-i386
 # see http://live.debian.net/ and http://wiki.debian.org/DebianLive/
---debian-live=binary-net.tar.gz:Debian Live Lenny
---debian-live=binary-net-alt.tar.gz:Debian Live Alternate
+--debian-live=binary-net.tar.gz;Debian Live Lenny
+--debian-live=binary-net-alt.tar.gz;Debian Live Alternate
 # http://www.debian.org/
 --debian=lenny,squeeze,sid
 # http://www.ubuntu.com/
