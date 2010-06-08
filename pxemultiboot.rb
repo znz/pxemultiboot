@@ -11,7 +11,7 @@ This program builds PXE multi boot environment.
 
 Optional:
 * unzip for some options
-* bsdtar for --ubuntu-casper (ubuntu live iso)
+* 7z (7-Zip) for --ubuntu-casper (ubuntu live iso)
 
 == Usage
 == build tftpboot
@@ -465,7 +465,7 @@ label debian-live-#{base}
           "isolinux",
           "preseed",
         ]
-        top.xsystem("bsdtar", "-xf", ubuntu_iso, *files)
+        top.xsystem("7z", "x", ubuntu_iso, *files)
         fu.chmod(0755, ["casper", "isolinux", "preseed"])
         fu.chmod(0644, Dir.glob("{casper,isolinux,preseed}/*"))
       end
