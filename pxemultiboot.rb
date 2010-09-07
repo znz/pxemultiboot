@@ -1087,8 +1087,8 @@ menu end
         "sid" => "sid (unstable)",
         "squeeze" => "squeeze (testing)",
         "lenny" => "lenny (stable)",
-        "etch" => "etch (oldstable)",
-        "etchnhalf" => "etch-and-a-half",
+        #"etch" => "etch (oldstable)",
+        #"etchnhalf" => "etch-and-a-half",
       }
       debian_title = "Debian GNU/Linux Install"
       opts.on("--debian #{debian_suites.keys.join(',')}", Array, debian_title) do |list|
