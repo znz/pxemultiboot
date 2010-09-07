@@ -1072,7 +1072,7 @@ menu end
 
   def run(argv)
     top_menu = TopMenu.new("#{@boot_screens}/menu.cfg")
-    syslinux_ver = "3.83"
+    syslinux_ver = "3.86"
 
     OptionParser.new do |opts|
       opts.on("--top-dir=DIR") do |v|
