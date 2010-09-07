@@ -2,11 +2,13 @@
 # see http://www.kernel.org/pub/linux/utils/boot/syslinux/
 --syslinux=3.86
 # Ubuntu ISO
---ubuntu-casper=ubuntu-ja-10.04-desktop-i386-20100512.iso;Live Lucid ja i386;192.168.0.1:/srv/nfs/live/ubuntu-ja-10.04-desktop-i386-20100512 i915.modeset=1
---ubuntu-casper=ubuntu-ja-8.04.2-desktop-i386.iso;Live Hardy ja i386;192.168.0.1:/srv/nfs/live/ubuntu-ja-8.04.2-desktop-i386
+--ubuntu-casper=ubuntu-ja-10.04-desktop-i386-20100512.iso;Live Lucid ja i386;netboot=nfs nfsroot=192.168.0.1:/srv/nfs/live/ubuntu-ja-10.04-desktop-i386-20100512 i915.modeset=1
+--ubuntu-casper=ubuntu-ja-8.04.2-desktop-i386.iso;Live Hardy ja i386;netboot=nfs nfsroot=192.168.0.1:/srv/nfs/live/ubuntu-ja-8.04.2-desktop-i386
+# see mk-live-recovery
+--live-recovery=lucid-live-20100907.iso;Live Lucid 2010-09-07;netboot=nfs nfsroot=192.168.0.1:/srv/nfs/live/lucid-live-20100907 i915.modeset=1 nopersistent rw quiet splash username=john hostname=lucid-live-desktop
 # see http://live.debian.net/ and http://wiki.debian.org/DebianLive/
 --debian-live=binary-net.tar.gz;Debian Live Lenny
---debian-live=binary-net-alt.tar.gz;Debian Live Alternate
+#--debian-live=binary-net-alt.tar.gz;Debian Live Alternate
 # http://www.debian.org/
 --debian=lenny,squeeze,sid
 # http://www.ubuntu.com/
@@ -16,7 +18,7 @@
 # http://www.centos.org/
 --centos=5.5,4.8
 # http://www.vinelinux.org/
---vine=5.1,4.2
+--vine=5.1
 # http://www.memtest.org/
 --memtest=4.10
 # http://elm-chan.org/fsw/mbm/mbm.html
