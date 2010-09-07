@@ -534,6 +534,74 @@ label ubuntu-casper-#{base}
     end
   end # UbuntuCasper
 
+  # http://github.com/znz/mk-live-recovery
+  class LiveRecovery < Menu
+    def initialize(live_recovery_iso, title, casper_options)
+      @live_recovery_iso = File.expand_path(live_recovery_iso)
+      @title = title
+      @casper_options = casper_options
+      super("boot-screens/live-recovery-#{base}.cfg")
+    end
+
+    def live_recovery_iso
+      @live_recovery_iso
+    end
+
+    def casper_options
+      @casper_options
+    end
+
+    def base
+      @base ||= File.basename(live_recovery_iso).sub(/\.iso\z/, '')
+    end
+
+    def live_dir
+      "live-recovery/#{base}"
+    end
+
+    def main(parent, top)
+      fu = top.fu
+
+      fu.mkpath("tmp/boot/grub")
+      fu.chdir("tmp") do
+        files = [
+          "boot/grub/grub.cfg",
+          "boot/initrd.img",
+          "boot/vmlinuz",
+        ]
+        top.xsystem("7z", "x", live_recovery_iso, *files)
+        fu.chmod(0644, files)
+      end
+
+      fu.rm_rf(live_dir)
+      fu.mkpath("#{live_dir}/boot/grub")
+      [
+        "grub/grub.cfg",
+        "initrd.img",
+        "vmlinuz",
+      ].each do |filename|
+        if File.exist?("tmp/boot/#{filename}")
+          fu.mv("tmp/boot/#{filename}", "#{live_dir}/boot/#{filename}")
+        end
+      end
+      fu.rmdir("tmp/boot/grub")
+      fu.rmdir("tmp/boot")
+      fu.rmdir("tmp")
+
+      cfg_puts <<-CFG
+label live-recovery-#{base}
+	menu label #{@title}
+	kernel #{live_dir}/boot/vmlinuz
+	append initrd=#{live_dir}/boot/initrd.img boot=casper #{casper_options}
+      CFG
+      parent.menu_include @menu_cfg
+    end
+
+    def cfg_prologue
+      ""
+    end
+  end # LiveRecovery
+
   class Anaconda < Menu
     def initialize(options)
       @distro = options[:distro]
@@ -1142,6 +1210,13 @@ menu end
         path, title, casper_options = match.split(/;/, 3)
         ubuntu_casper = UbuntuCasper.new(path, title, casper_options)
         top_menu.push_sub_menu(ubuntu_casper)
+      end
+
+      live_recovery_title = "Live Recovery"
+      opts.on("--live-recovery 'path/to/live-recovery.iso;Live Recovery SubTitle;netboot=nfs nfs-server-ip:path/to/live'", /\A[^;]+;[^;]+;.+\Z/, live_recovery_title) do |match|
+        path, title, casper_options = match.split(/;/, 3)
+        live_recovery = LiveRecovery.new(path, title, casper_options)
+        top_menu.push_sub_menu(live_recovery)
       end
 
       ubuntu_suites = {
