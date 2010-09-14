@@ -69,6 +69,7 @@ class PxeMultiBootHelper
       :centos => "http://ftp.riken.jp/Linux/centos",
       :vine => "http://ftp.vinelinux.org/pub/Vine",
       #:vine => "http://www.t.ring.gr.jp/pub/linux/Vine",
+      :momonga => "http://dist.momonga-linux.org/pub/momonga",
 
       :memtest => "http://www.memtest.org/download/%s/memtest86+-%s.zip",
 
@@ -1314,6 +1315,25 @@ menu end
               :template => "%s/Vine-%s/%s/%s",
             }
             vine.push_sub_menu(Anaconda.new(options))
+          end
+        end
+      end
+
+      momonga_title = "Momonga Linux Install"
+      opts.on("--momonga 7,6", Array, momonga_title) do |list|
+        momonga = SubMenu.new("momonga", momonga_title)
+        top_menu.push_sub_menu(momonga)
+        list.each do |ver|
+          archs = %w"i686 x86_64"
+          archs.each do |arch|
+            options = {
+              :distro => "momonga",
+              :title => "Momonga Linux",
+              :ver => ver,
+              :arch => arch,
+              :template => "%s/%s/Momonga/%s/os/%s",
+            }
+            momonga.push_sub_menu(Anaconda.new(options))
           end
         end
       end

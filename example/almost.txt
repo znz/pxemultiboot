@@ -19,6 +19,8 @@
 --centos=5.5,4.8
 # http://www.vinelinux.org/
 --vine=5.1
+# http://www.momonga-linux.org/
+--momonga=7
 # http://www.memtest.org/
 --memtest=4.10
 # http://elm-chan.org/fsw/mbm/mbm.html
