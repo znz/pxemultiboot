@@ -319,10 +319,10 @@ menu begin #{@title}
         end
       end
 
-      kernel = "#{@installer_suite}#{@m_gtk}-installer/#{@arch}/boot-screens/vesamenu.c32"
-      unless File.exist?(kernel)
-        kernel = "boot-screens/vesamenu.c32"
-      end
+      #kernel = "#{@installer_suite}#{@m_gtk}-installer/#{@arch}/boot-screens/vesamenu.c32"
+      #unless File.exist?(kernel)
+      kernel = "boot-screens/vesamenu.c32"
+      #end
       parent.cfg_puts <<-CFG
 label #{@target_suite}-#{@arch}#{@m_gtk}
 	menu label #{@title} #{@arch}#{@s_GTK} Installer
@@ -417,10 +417,10 @@ label #{@target_suite}-#{@arch}#{@m_gtk}
       end
       proc_cfg_file.call(menu_cfg)
 
-      kernel = "#{live_dir}/#{arch}/boot-screens/vesamenu.c32"
-      unless File.exist?(kernel)
-        kernel = "boot-screens/vesamenu.c32"
-      end
+      #kernel = "#{live_dir}/#{arch}/boot-screens/vesamenu.c32"
+      #unless File.exist?(kernel)
+      kernel = "boot-screens/vesamenu.c32"
+      #end
       parent.cfg_puts <<-CFG
 label debian-live-#{base}
 	menu label #{@title}
@@ -522,10 +522,10 @@ label debian-live-#{base}
       end
       proc_cfg_file.call(isolinux_cfg)
 
-      kernel = "#{live_dir}/isolinux/vesamenu.c32"
-      unless File.exist?(kernel)
-        kernel = "boot-screens/vesamenu.c32"
-      end
+      #kernel = "#{live_dir}/isolinux/vesamenu.c32"
+      #unless File.exist?(kernel)
+      kernel = "boot-screens/vesamenu.c32"
+      #end
       parent.cfg_puts <<-CFG
 label ubuntu-casper-#{base}
 	menu label #{@title}
@@ -641,9 +641,9 @@ label live-recovery-#{base}
       menu_c32 = "boot-screens/vesamenu.c32"
       cfg.gsub!(/^(default|display|F\d|menu background|\s*kernel|KBDMAP) (vesamenu\.c32|\w+\.msg|splash\.jpg|memtest|jp106\.kbd)$/i) {
         more_files << $2
-        if $1 == "default"
-          menu_c32 = "#{d_v_a_dir}/#{$2}"
-        end
+        #if $1 == "default"
+        #  menu_c32 = "#{d_v_a_dir}/#{$2}"
+        #end
         "#{$1} #{d_v_a_dir}/#{$2}"
       }
       if @append_template
