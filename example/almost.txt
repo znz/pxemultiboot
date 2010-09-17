@@ -21,6 +21,8 @@
 --vine=5.1
 # http://www.momonga-linux.org/
 --momonga=7
+# http://tinycorelinux.com/
+--tinycore=3.1
 # http://www.memtest.org/
 --memtest=4.10
 # http://elm-chan.org/fsw/mbm/mbm.html

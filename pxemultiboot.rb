@@ -70,6 +70,7 @@ class PxeMultiBootHelper
       :vine => "http://ftp.vinelinux.org/pub/Vine",
       #:vine => "http://www.t.ring.gr.jp/pub/linux/Vine",
       :momonga => "http://dist.momonga-linux.org/pub/momonga",
+      :tinycore => "http://distro.ibiblio.org/pub/linux/distributions/tinycorelinux/3.x/release/",
 
       :memtest => "http://www.memtest.org/download/%s/memtest86+-%s.zip",
 
@@ -941,6 +942,41 @@ label #{@dir}
     end
   end
 
+  # Tiny Core Linux
+  # http://tinycorelinux.com/
+  class TinyCore < SimpleMenu
+    TITLE = "Tiny Core Linux"
+
+    def initialize(ver)
+      super("tinycore", ver)
+    end
+
+    def uri(top)
+      "#{top.mirror(:tinycore)}/tinycore_#{@ver}.iso"
+    end
+
+    def main_after_download(download_file, parent, top)
+      fu = top.fu
+
+      files = ["boot/bzImage", "boot/tinycore.gz"]
+      fu.mkpath("tmp")
+      fu.chdir("tmp") do
+        top.xsystem("7z", "x", download_file, *files)
+      end
+      files.each do |file|
+        fu.mv("tmp/#{file}", @dir)
+      end
+      fu.rmdir("tmp/boot")
+      fu.rmdir("tmp")
+      cfg_puts <<-CFG
+label #{@dir}
+	menu label #{title}
+	kernel #{@dir}/bzImage
+	append initrd=#{@dir}/tinycore.gz quiet
+      CFG
+    end
+  end # TinyCore
+
   class Grub4Dos < SimpleMenu
     TITLE = "GRUB for DOS"
 
@@ -1336,6 +1372,10 @@ menu end
             momonga.push_sub_menu(Anaconda.new(options))
           end
         end
+      end
+
+      opts.on("--tinycore 3.1", TinyCore::TITLE) do |v|
+        top_menu.push_sub_menu(TinyCore.new(v))
       end
 
       opts.on("--memtest 4.00", Memtest::TITLE) do |v|
