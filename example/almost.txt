@@ -12,9 +12,9 @@
 # http://www.debian.org/
 --debian=lenny,squeeze,sid
 # http://www.ubuntu.com/
---ubuntu=lucid,karmic,hardy,jaunty
+--ubuntu=maverick,lucid,karmic,hardy,jaunty
 # http://fedoraproject.org/
---fedora=13,12,11
+--fedora=14,13,12,11
 # http://www.centos.org/
 --centos=5.5,4.8
 # http://www.vinelinux.org/

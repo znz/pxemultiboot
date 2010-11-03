@@ -1257,6 +1257,7 @@ menu end
       end
 
       ubuntu_suites = {
+        "maverick" => "10.10 Maverick Meerkat",
         "lucid" => "10.04 LTS Lucid Lynx",
         "karmic" => "9.10 Karmic Koara",
         "jaunty" => "9.04 Jaunty Jackalope",
